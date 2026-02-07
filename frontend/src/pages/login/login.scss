@@ -1,0 +1,495 @@
+// Healthcare-inspired color palette
+$healthcare-primary: #0f62fe; // Calming blue
+$healthcare-primary-light: #4589ff;
+$healthcare-primary-lighter: #d0e2ff;
+$healthcare-secondary: #24a148; // Medical green
+$healthcare-secondary-light: #6fdc8c;
+$healthcare-accent: #42be65; // Soft green accent
+$healthcare-neutral-100: #f4f4f4;
+$healthcare-neutral-200: #e0e0e0;
+$healthcare-neutral-300: #c6c6c6;
+$healthcare-neutral-700: #525252;
+$healthcare-neutral-900: #161616;
+$healthcare-white: #ffffff;
+
+// Soft shadows for depth
+$shadow-soft: 0 2px 8px rgba(15, 98, 254, 0.08);
+$shadow-medium: 0 4px 16px rgba(15, 98, 254, 0.12);
+$shadow-large: 0 8px 32px rgba(15, 98, 254, 0.16);
+
+// Animation timing
+$ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+$ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+// Container with calming background
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  position: relative;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 50%, #f5fdf7 100%);
+  overflow: hidden;
+}
+
+// Animated background shapes
+.login-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+
+  &__shape {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.15;
+    animation: float 20s infinite ease-in-out;
+
+    &--1 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, $healthcare-primary 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+      animation-delay: 0s;
+    }
+
+    &--2 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, $healthcare-secondary 0%, transparent 70%);
+      bottom: -50px;
+      right: -50px;
+      animation-delay: 7s;
+    }
+
+    &--3 {
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, $healthcare-accent 0%, transparent 70%);
+      top: 50%;
+      right: 10%;
+      animation-delay: 14s;
+    }
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(20px, 30px) scale(1.05);
+  }
+}
+
+// Content wrapper
+.login-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  animation: slideUp 0.6s $ease-smooth;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Main login card
+.login-card {
+  background: $healthcare-white;
+  border-radius: 16px;
+  box-shadow: $shadow-large;
+  padding: 3rem 2.5rem 2.5rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: transform 0.3s $ease-smooth, box-shadow 0.3s $ease-smooth;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 48px rgba(15, 98, 254, 0.2);
+  }
+
+  @media (max-width: 640px) {
+    padding: 2.5rem 1.5rem 2rem;
+  }
+}
+
+// Header section with icons
+.login-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  animation: fadeIn 0.8s $ease-smooth 0.2s backwards;
+
+  &__icon-group {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__icon {
+    width: 32px;
+    height: 32px;
+    color: $healthcare-primary;
+    opacity: 0;
+    animation: iconPop 0.5s $ease-bounce forwards;
+
+    &:nth-child(1) {
+      animation-delay: 0.4s;
+      color: $healthcare-primary;
+    }
+
+    &:nth-child(2) {
+      animation-delay: 0.5s;
+      color: $healthcare-secondary;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 0.6s;
+      color: $healthcare-accent;
+    }
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: $healthcare-neutral-900;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  &__subtitle {
+    font-size: 0.9375rem;
+    color: $healthcare-neutral-700;
+    line-height: 1.5;
+    font-weight: 400;
+  }
+}
+
+@keyframes iconPop {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-180deg);
+  }
+  60% {
+    transform: scale(1.2) rotate(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Form styling
+.login-form {
+  width: 100%;
+  animation: fadeIn 0.8s $ease-smooth 0.4s backwards;
+
+  &__notification {
+    margin-bottom: 1.5rem;
+
+    // Customize Carbon notification for softer appearance
+    :global(.cds--inline-notification) {
+      border-radius: 8px;
+      border-left-width: 4px;
+    }
+  }
+
+  &__field {
+    margin-bottom: 1.5rem;
+
+    // Customize Carbon TextInput
+    :global {
+      .cds--label {
+        font-weight: 500;
+        color: $healthcare-neutral-900;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+        letter-spacing: 0.01em;
+      }
+
+      .cds--text-input {
+        border-radius: 8px;
+        border: 1.5px solid $healthcare-neutral-200;
+        background: $healthcare-white;
+        padding: 0.875rem 1rem;
+        font-size: 0.9375rem;
+        transition: all 0.25s $ease-smooth;
+        font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+        &:focus {
+          border-color: $healthcare-primary;
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(15, 98, 254, 0.1);
+        }
+
+        &:hover:not(:focus) {
+          border-color: $healthcare-neutral-300;
+          background: $healthcare-neutral-100;
+        }
+
+        &::placeholder {
+          color: $healthcare-neutral-300;
+        }
+      }
+
+      .cds--text-input__field-wrapper {
+        position: relative;
+      }
+    }
+  }
+
+  &__actions {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__button {
+    width: 100%;
+
+    // Customize Carbon Button
+    :global(.cds--btn) {
+      width: 100%;
+      padding: 0.875rem 2rem;
+      font-size: 1rem;
+      font-weight: 500;
+      border-radius: 8px;
+      background: linear-gradient(135deg, $healthcare-primary 0%, $healthcare-primary-light 100%);
+      border: none;
+      transition: all 0.3s $ease-smooth;
+      text-transform: none;
+      letter-spacing: 0.02em;
+      box-shadow: $shadow-soft;
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, darken($healthcare-primary, 5%) 0%, $healthcare-primary 100%);
+        box-shadow: $shadow-medium;
+        transform: translateY(-2px);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: $shadow-soft;
+      }
+
+      &:disabled {
+        background: $healthcare-neutral-200;
+        color: $healthcare-neutral-700;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+    }
+  }
+
+  &__loading {
+    // Customize Carbon InlineLoading
+    :global(.cds--inline-loading) {
+      justify-content: center;
+
+      .cds--inline-loading__text {
+        color: $healthcare-neutral-700;
+        font-size: 0.875rem;
+      }
+
+      .cds--loading__svg circle {
+        stroke: $healthcare-primary;
+      }
+    }
+  }
+}
+
+// Footer section
+.login-footer {
+  margin-top: 2.5rem;
+  animation: fadeIn 0.8s $ease-smooth 0.6s backwards;
+
+  &__divider {
+    height: 1px;
+    background: linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    $healthcare-neutral-200 50%,
+                    transparent 100%
+    );
+    margin-bottom: 1.5rem;
+  }
+
+  &__features {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  &__feature {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: $healthcare-neutral-700;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s $ease-smooth;
+    cursor: default;
+
+    svg {
+      width: 20px;
+      height: 20px;
+      color: $healthcare-primary;
+      transition: all 0.3s $ease-smooth;
+    }
+
+    &:hover {
+      color: $healthcare-primary;
+      transform: translateY(-2px);
+
+      svg {
+        color: $healthcare-secondary;
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  &__text {
+    text-align: center;
+    font-size: 0.8125rem;
+    color: $healthcare-neutral-700;
+    line-height: 1.5;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 640px) {
+  .login-container {
+    padding: 1rem;
+  }
+
+  .login-header {
+    &__title {
+      font-size: 1.75rem;
+    }
+
+    &__icon-group {
+      gap: 0.75rem;
+    }
+
+    &__icon {
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  .login-footer {
+    &__features {
+      gap: 1.5rem;
+    }
+
+    &__feature {
+      font-size: 0.8125rem;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+
+  .login-background__shape {
+    &--1 {
+      width: 300px;
+      height: 300px;
+    }
+
+    &--2 {
+      width: 200px;
+      height: 200px;
+    }
+
+    &--3 {
+      width: 180px;
+      height: 180px;
+    }
+  }
+}
+
+// Accessibility improvements
+@media (prefers-reduced-motion: reduce) {
+  .login-content,
+  .login-header,
+  .login-form,
+  .login-footer {
+    animation: none;
+  }
+
+  .login-background__shape {
+    animation: none;
+  }
+
+  .login-header__icon {
+    animation: none;
+    opacity: 1;
+  }
+
+  .login-card:hover {
+    transform: none;
+  }
+
+  .login-form__button:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .login-footer__feature:hover {
+    transform: none;
+  }
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .login-card {
+    border: 2px solid $healthcare-neutral-900;
+  }
+
+  .login-form__field :global(.cds--text-input) {
+    border-width: 2px;
+  }
+
+  .login-form__button :global(.cds--btn) {
+    border: 2px solid $healthcare-neutral-900;
+  }
+}

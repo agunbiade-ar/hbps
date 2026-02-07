@@ -1,0 +1,7 @@
+// Import the entire Carbon library (components, grid, and reset)
+@use '@carbon/react';
+
+// Or, for faster builds, import only what you need:
+// @use '@carbon/react/scss/reset';
+// @use '@carbon/react/scss/grid';
+// @use '@carbon/react/scss/components/button';

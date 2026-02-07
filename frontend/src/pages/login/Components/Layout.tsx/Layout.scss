@@ -1,0 +1,100 @@
+/* Minimalist layout styles for OpenMRS supporting app */
+
+.omrs-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--cds-background, #ffffff);
+}
+
+.omrs-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.omrs-shell {
+  display: flex;
+  flex: 1 1 auto;
+  height: calc(100vh - 64px);
+}
+
+.sidebar {
+  width: 240px;
+  background: #f4f4f4;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  transition:
+    width 180ms ease,
+    transform 180ms ease;
+}
+
+.sidebar__footer {
+  margin-top: auto;
+  padding: 8px 12px;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+}
+
+.omrs-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.omrs-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  color: rgba(0, 0, 0, 0.9);
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.omrs-nav__item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.omrs-nav__label {
+  font-size: 14px;
+}
+
+.omrs-content {
+  flex: 1 1 auto;
+  padding: 24px;
+  overflow: auto;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%);
+}
+
+/* Collapsed state */
+.omrs-shell.collapsed .omrs-sidebar {
+  width: 64px;
+}
+
+// .omrs-shell.collapsed .omrs-nav__label {
+//   display: none;
+// }
+
+/* Responsive */
+@media (max-width: 720px) {
+  .omrs-sidebar {
+    position: absolute;
+    left: 0;
+    top: 64px;
+    height: calc(100vh - 64px);
+    transform: translateX(-108%);
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.16);
+  }
+
+  .omrs-shell.collapsed .omrs-sidebar {
+    transform: translateX(0);
+    width: 240px;
+  }
+
+  .omrs-content {
+    padding: 16px;
+  }
+}
