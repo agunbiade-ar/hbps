@@ -1,0 +1,574 @@
+// Import healthcare color palette
+$healthcare-primary: #0f62fe;
+$healthcare-primary-light: #4589ff;
+$healthcare-primary-lighter: #d0e2ff;
+$healthcare-secondary: #24a148;
+$healthcare-secondary-light: #6fdc8c;
+$healthcare-accent: #42be65;
+$healthcare-warning: #f1c21b;
+$healthcare-error: #da1e28;
+$healthcare-neutral-100: #f4f4f4;
+$healthcare-neutral-200: #e0e0e0;
+$healthcare-neutral-300: #c6c6c6;
+$healthcare-neutral-700: #525252;
+$healthcare-neutral-900: #161616;
+$healthcare-white: #ffffff;
+
+// Shadows
+$shadow-soft: 0 2px 8px rgba(15, 98, 254, 0.08);
+$shadow-medium: 0 4px 16px rgba(15, 98, 254, 0.12);
+$shadow-large: 0 8px 32px rgba(15, 98, 254, 0.16);
+
+// Animation
+$ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+// Main container
+.payments-list-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 50%, #f5fdf7 100%);
+  padding: 2rem;
+  animation: fadeIn 0.5s $ease-smooth;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Header section
+.payments-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1.5rem;
+  animation: slideDown 0.6s $ease-smooth;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  &__content {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  &__icon {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(
+      135deg,
+      $healthcare-primary 0%,
+      $healthcare-primary-light 100%
+    );
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $healthcare-white;
+    box-shadow: $shadow-medium;
+    flex-shrink: 0;
+    animation: iconBounce 0.8s $ease-smooth 0.2s backwards;
+
+    @media (max-width: 768px) {
+      width: 56px;
+      height: 56px;
+    }
+  }
+
+  &__text {
+    flex: 1;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: $healthcare-neutral-900;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+    font-family:
+      'IBM Plex Sans',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
+
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+    }
+  }
+
+  &__subtitle {
+    font-size: 0.9375rem;
+    color: $healthcare-neutral-700;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  &__action {
+    flex-shrink: 0;
+
+    :global(.cds--btn) {
+      border-radius: 8px;
+      background: linear-gradient(
+        135deg,
+        $healthcare-secondary 0%,
+        $healthcare-secondary-light 100%
+      );
+      border: none;
+      padding: 0.875rem 1.5rem;
+      font-weight: 500;
+      box-shadow: $shadow-soft;
+      transition: all 0.3s $ease-smooth;
+
+      &:hover {
+        background: linear-gradient(
+          135deg,
+          darken($healthcare-secondary, 5%) 0%,
+          $healthcare-secondary 100%
+        );
+        box-shadow: $shadow-medium;
+        transform: translateY(-2px);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes iconBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-180deg);
+  }
+  60% {
+    transform: scale(1.1) rotate(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+// Notification
+.payments-list-notification {
+  margin-bottom: 1.5rem;
+  animation: slideDown 0.4s $ease-smooth;
+
+  :global(.cds--inline-notification) {
+    border-radius: 8px;
+    box-shadow: $shadow-soft;
+  }
+}
+
+// Filters section
+.payments-list-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1.5rem;
+  background: linear-gradient(
+    to right,
+    rgba(240, 247, 255, 0.5) 0%,
+    $healthcare-white 100%
+  );
+  border-bottom: 1px solid $healthcare-neutral-200;
+  margin-bottom: 0;
+
+  &__today-toggle {
+    flex-shrink: 0;
+
+    :global(.cds--toggle__label) {
+      font-size: 0.875rem;
+      color: $healthcare-neutral-900;
+      font-weight: 500;
+    }
+
+    :global(.cds--toggle) {
+      margin-right: 0.5rem;
+    }
+  }
+
+  :global(.cds--date-picker) {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+
+    :global(.cds--date-picker__input) {
+      margin-right: 0.5rem;
+    }
+  }
+
+  :global(.cds--date-picker__input-wrapper) {
+    min-width: 140px;
+  }
+
+  :global(.cds--date-picker__input-wrapper label) {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: $healthcare-neutral-700;
+    margin-bottom: 0.5rem;
+  }
+
+  &__clear-btn {
+    flex-shrink: 0;
+    margin-left: auto;
+
+    :global(.cds--btn) {
+      font-size: 0.875rem;
+      padding: 0.625rem 1rem;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    gap: 1rem;
+    padding: 1.25rem;
+
+    :global(.cds--date-picker) {
+      gap: 0.75rem;
+    }
+
+    &__clear-btn {
+      margin-left: 0;
+      width: 100%;
+
+      :global(.cds--btn) {
+        width: 100%;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 1rem;
+
+    &__today-toggle {
+      width: 100%;
+    }
+
+    :global(.cds--date-picker) {
+      width: 100%;
+      flex-direction: column;
+
+      :global(.cds--date-picker__input-wrapper) {
+        width: 100%;
+      }
+    }
+
+    &__clear-btn {
+      width: 100%;
+      margin-left: 0;
+
+      :global(.cds--btn) {
+        width: 100%;
+      }
+    }
+  }
+}
+
+// Table container
+.payments-list-table-container {
+  background: $healthcare-white;
+  border-radius: 12px;
+  box-shadow: $shadow-soft;
+  overflow: hidden;
+  animation: fadeIn 0.5s $ease-smooth 0.1s backwards;
+
+  :global(.cds--toolbar) {
+    background: linear-gradient(
+      to right,
+      $healthcare-neutral-100 0%,
+      $healthcare-white 100%
+    );
+    border-bottom: 1px solid $healthcare-neutral-200;
+    padding: 1rem;
+
+    :global(.cds--search--input) {
+      border-radius: 6px;
+    }
+  }
+}
+
+.payments-list-table-wrapper {
+  overflow-x: auto;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $healthcare-neutral-100;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $healthcare-neutral-300;
+    border-radius: 4px;
+
+    &:hover {
+      background: $healthcare-neutral-200;
+    }
+  }
+}
+
+.payments-list-table {
+  width: 100%;
+
+  :global(thead) {
+    background: linear-gradient(
+      135deg,
+      $healthcare-primary 0%,
+      $healthcare-primary-light 100%
+    );
+
+    :global(th) {
+      color: $healthcare-white;
+      font-weight: 600;
+      padding: 1.25rem 1rem;
+      border: none;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  :global(tbody) {
+    :global(tr) {
+      border-bottom: 1px solid $healthcare-neutral-100;
+      transition: background-color 200ms $ease-smooth;
+
+      &:hover {
+        background-color: rgba(15, 98, 254, 0.02);
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      :global(td) {
+        padding: 1rem;
+        font-size: 0.95rem;
+        color: $healthcare-neutral-900;
+      }
+    }
+  }
+}
+
+.payments-list-table__row {
+  cursor: pointer;
+  transition: all 200ms $ease-smooth;
+
+  &:hover {
+    background-color: rgba(15, 98, 254, 0.03) !important;
+  }
+}
+
+.payments-list-table__amount {
+  font-weight: 600;
+  color: $healthcare-secondary;
+  font-size: 1rem;
+}
+
+.payments-list-table__print-btn {
+  :global(.cds--btn) {
+    color: $healthcare-primary;
+    transition: all 200ms $ease-smooth;
+
+    &:hover {
+      background-color: rgba(15, 98, 254, 0.1);
+      color: $healthcare-primary-light;
+    }
+
+    &:active {
+      background-color: rgba(15, 98, 254, 0.2);
+    }
+  }
+
+  :global(.cds--btn--ghost) {
+    border-color: transparent;
+  }
+}
+
+// Empty state
+.payments-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  color: $healthcare-neutral-700;
+
+  :global(svg) {
+    margin-bottom: 1rem;
+    opacity: 0.4;
+  }
+
+  &__text {
+    font-size: 1rem;
+    margin: 0;
+    text-align: center;
+  }
+}
+
+// Pagination
+.payments-list-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 1.5rem;
+  border-top: 1px solid $healthcare-neutral-100;
+  background: $healthcare-white;
+  gap: 1rem;
+
+  :global(.cds--pagination) {
+    margin: 0;
+  }
+
+  :global(.cds--select-input) {
+    border-radius: 6px;
+  }
+}
+
+// Responsive design
+@media (max-width: 1024px) {
+  .payments-list-table {
+    font-size: 0.85rem;
+
+    :global(thead th) {
+      padding: 1rem 0.75rem;
+    }
+
+    :global(tbody td) {
+      padding: 0.75rem;
+    }
+  }
+
+  .payments-list-table__print-btn {
+    :global(.cds--btn) {
+      padding: 0.375rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .payments-list-container {
+    padding: 1rem;
+  }
+
+  .payments-list-header {
+    &__title {
+      font-size: 1.5rem;
+    }
+
+    &__subtitle {
+      font-size: 0.85rem;
+    }
+  }
+
+  .payments-list-table {
+    font-size: 0.8rem;
+
+    :global(thead th) {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    :global(tbody td) {
+      padding: 0.5rem;
+    }
+  }
+
+  .payments-list-empty {
+    padding: 2rem 1rem;
+
+    :global(svg) {
+      width: 32px;
+      height: 32px;
+    }
+
+    &__text {
+      font-size: 0.9rem;
+    }
+  }
+
+  .payments-list-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+// Print styles for receipt
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  * {
+    box-shadow: none !important;
+  }
+
+  .receipt {
+    width: 58mm;
+    margin: 0 auto;
+  }
+
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+}
+
+@media print and (min-width: 80mm) {
+  body {
+    margin: 0;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+  }
+
+  .receipt {
+    width: 72mm;
+    padding: 10px;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  th,
+  td {
+    padding: 2px 4px;
+    text-align: left;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+}

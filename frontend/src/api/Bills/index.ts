@@ -14,8 +14,16 @@ export const bills_api = createApi({
     getBill: builder.query({
       query: ({ id }) => `/bills/${id}`,
       transformResponse: (response: any) => response,
+      providesTags: ['bills'],
     }),
+    updateBill: builder.mutation({
+      query: ({id, body}) => ({
+        url: `/bills/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+    })
   }),
 });
 
-export const { useGetAllBillsQuery, useGetBillQuery } = bills_api;
+export const { useGetAllBillsQuery, useGetBillQuery, useUpdateBillMutation } = bills_api;

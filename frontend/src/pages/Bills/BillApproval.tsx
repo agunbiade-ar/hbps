@@ -13,6 +13,7 @@ import {
   TableCell,
   Modal,
   Tag,
+  Checkbox,
 } from '@carbon/react';
 import {
   CheckmarkFilled,
@@ -22,15 +23,16 @@ import {
 } from '@carbon/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './bill-approval.scss';
-import { useGetBillQuery } from '../../api/Bills';
+import { useGetBillQuery, useUpdateBillMutation } from '../../api/Bills';
 
 interface BillWithItems {
   bill_id: string;
   patient_name: string;
+  bill_status: string;
   total_amount: number;
   bill_items: {
     concept_name: string;
-    id: number;
+    bill_item_id: number;
     price: number;
     quantity: number;
     status: string;
@@ -44,17 +46,22 @@ const BillDetailApproval = () => {
   const [success, setSuccess] = useState('');
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   const location = useLocation();
   const bill = location.state['bill'];
 
   const billQuery = useGetBillQuery({ id: bill?.id });
+  const [ updateBill, {isLoading: isUpdating}] = useUpdateBillMutation();
+  console.log(billQuery)
 
   const billItems: BillWithItems = useMemo(() => {
     const billsData = billQuery.data || [];
     return billsData;
   }, [billQuery.data]);
 
+  console.log(billItems);
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -82,6 +89,66 @@ const BillDetailApproval = () => {
     setIsApproveModalOpen(true);
   };
 
+  const handleItemCheckboxChange = (itemId: number, checked: boolean) => {
+    const newSelectedItems = new Set(selectedItems);
+    if (checked) {
+      newSelectedItems.add(itemId);
+    } else {
+      newSelectedItems.delete(itemId);
+    }
+    setSelectedItems(newSelectedItems);
+  };
+
+  const handleSelectAllChange = (checked: boolean) => {
+    if (checked) {
+      const allItemIds = billItems.bill_items.map((item) => item.bill_item_id);
+      setSelectedItems(new Set(allItemIds));
+    } else {
+      setSelectedItems(new Set());
+    }
+  };
+
+  const handleUpdateSelectedClick = () => {
+    if (selectedItems.size === 0) {
+      setError('Please select at least one item to update.');
+      return;
+    }
+    setIsUpdateModalOpen(true);
+  };
+
+  const handleUpdateConfirm = async (item_ids: number[]) => {
+    if (item_ids.length === 0) {
+      setError('No item was selected!')
+      return
+    }
+
+    try {
+      setIsProcessing(isUpdating);
+      setError("")
+      // {"status": "paid", "item_ids": [4518]}
+      const payload = {
+        id: billItems.bill_id,
+        body: {
+          status: "paid",
+          item_ids
+        }
+      }
+      const res = await updateBill(payload)
+      
+        setSuccess(
+          `${res.data.message}`,
+        );
+        setIsUpdateModalOpen(false);
+        setSelectedItems(new Set());
+        return res
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError('Failed to update items: ' + errMessage);
+    }finally{
+      setIsProcessing(isUpdating)
+    }
+  };
+
   const handleApproveConfirm = async () => {
     if (!bill) return;
 
@@ -94,7 +161,7 @@ const BillDetailApproval = () => {
       // Mock implementation
       console.log('Finalizing bill:', bill.id);
       setTimeout(() => {
-        setBill({ ...bill, status: 'finalized' });
+        // setBill({ ...bill, status: 'finalized' });
         setSuccess('Bill has been finalized successfully!');
         setIsApproveModalOpen(false);
         setIsProcessing(false);
@@ -113,6 +180,7 @@ const BillDetailApproval = () => {
 
   // Table headers for bill items
   const headers = [
+    { key: 'select', header: 'Select' },
     { key: 'item', header: 'Item Description' },
     { key: 'quantity', header: 'Qty' },
     { key: 'status', header: 'Status' },
@@ -136,7 +204,7 @@ const BillDetailApproval = () => {
           title='Bill not found'
           subtitle='The requested bill could not be found.'
         />
-        <Button onClick={() => navigate('/bills')} renderIcon={ArrowLeft}>
+        <Button onClick={() => navigate('/finance/bills')} renderIcon={ArrowLeft}>
           Back to Bills
         </Button>
       </div>
@@ -159,13 +227,23 @@ const BillDetailApproval = () => {
         <Button
           kind='ghost'
           renderIcon={ArrowLeft}
-          onClick={() => navigate('/bills')}
+          onClick={() => navigate('/finance/bills')}
           className='bill-detail-header__back'
         >
           Back to Bills
         </Button>
 
         <div className='bill-detail-header__actions'>
+          {selectedItems.size > 0 && (
+            <Button
+              kind='primary'
+              onClick={handleUpdateSelectedClick}
+              className='bill-detail-header__update'
+            >
+              Update {selectedItems.size} Selected Item
+              {selectedItems.size !== 1 ? 's' : ''}
+            </Button>
+          )}
           {bill.status === 'draft' && (
             <Button
               kind='primary'
@@ -205,7 +283,7 @@ const BillDetailApproval = () => {
             title='Success'
             subtitle={success}
             onClose={() => setSuccess('')}
-            timeout={5000}
+            // timeout={5000}
           />
         </div>
       )}
@@ -219,7 +297,7 @@ const BillDetailApproval = () => {
               <div>
                 <h1 className='bill-detail-card__title'>Bill #{bill.id}</h1>
                 <div className='bill-detail-card__status'>
-                  <Tag>{bill.status}</Tag>
+                  <Tag>{billItems.bill_status}</Tag>
                 </div>
               </div>
             </div>
@@ -274,7 +352,7 @@ const BillDetailApproval = () => {
           <DataTable
             rows={billItems.bill_items.map((item) => ({
               ...item,
-              id: item.id.toString(),
+              id: item.bill_item_id.toString(),
             }))}
             headers={headers}
           >
@@ -293,25 +371,72 @@ const BillDetailApproval = () => {
                 <Table {...getTableProps()}>
                   <TableHead>
                     <TableRow>
-                      {headers.map((header) => (
-                        <TableHeader
-                          {...getHeaderProps({ header })}
-                          key={header.key}
-                        >
-                          {header.header}
-                        </TableHeader>
-                      ))}
+                      {headers.map((header) => {
+                        if (header.key === 'select') {
+                          return (
+                            <TableHeader
+                              {...getHeaderProps({ header })}
+                              key={header.key}
+                            >
+                              {!billItems.bill_items.some(
+                                (item) => item.status == 'paid',
+                              ) && (
+                                <Checkbox
+                                  id='select-all'
+                                  labelText=''
+                                  checked={
+                                    billItems.bill_items.length > 0 &&
+                                    selectedItems.size ===
+                                      billItems.bill_items.length
+                                  }
+                                  indeterminate={
+                                    selectedItems.size > 0 &&
+                                    selectedItems.size <
+                                      billItems.bill_items.length
+                                  }
+                                  onChange={(e) =>
+                                    handleSelectAllChange(e.target.checked)
+                                  }
+                                />
+                              )}
+                            </TableHeader>
+                          );
+                        }
+                        return (
+                          <TableHeader
+                            {...getHeaderProps({ header })}
+                            key={header.key}
+                          >
+                            {header.header}
+                          </TableHeader>
+                        );
+                      })}
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {rows.map((row) => {
-                      const item = billItems.bill_items.find(
-                        (i) => i.id.toString() === row.id,
-                      );
+                      const item = billItems.bill_items.find((i) => {
+                        return i?.['bill_item_id'].toString() === row.id;
+                      });
                       if (!item) return null;
 
                       return (
                         <TableRow {...getRowProps({ row })} key={row.id}>
+                          <TableCell>
+                            {!(item.status == 'paid') && (
+                              <Checkbox
+                                id={`item-${item.bill_item_id}`}
+                                labelText=''
+                                checked={selectedItems.has(item.bill_item_id)}
+                                onChange={(e) =>
+                                  handleItemCheckboxChange(
+                                    item.bill_item_id,
+                                    (e.target as HTMLInputElement).checked,
+                                  )
+                                }
+                              />
+                            )}
+                          </TableCell>
                           <TableCell>
                             <div className='bill-detail-item-name'>
                               {item.concept_name}
@@ -392,6 +517,34 @@ const BillDetailApproval = () => {
           </div>
         </div>
       </div>
+
+      {/* Update Selected Items Confirmation Modal */}
+      <Modal
+        open={isUpdateModalOpen}
+        onRequestClose={() => setIsUpdateModalOpen(false)}
+        modalHeading='Update Selected Items'
+        primaryButtonText={isProcessing ? 'Updating...' : 'Update Status'}
+        secondaryButtonText='Cancel'
+        onRequestSubmit={ () => handleUpdateConfirm([...selectedItems])}
+        primaryButtonDisabled={isProcessing}
+        danger={false}
+        size='sm'
+      >
+        <p className='bill-detail-modal__text'>
+          Are you sure you want to update the status of the selected items?
+        </p>
+        <div className='bill-detail-modal__details'>
+          <p>
+            <strong>Bill ID:</strong> #{bill.id}
+          </p>
+          <p>
+            <strong>Items Selected:</strong> {selectedItems.size}
+          </p>
+          <p>
+            <strong>New Status:</strong> Paid
+          </p>
+        </div>
+      </Modal>
 
       {/* Finalize Confirmation Modal */}
       <Modal

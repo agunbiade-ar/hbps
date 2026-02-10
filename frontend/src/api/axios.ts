@@ -1,35 +1,65 @@
+// axios_api.ts
 import axios from 'axios';
-import type { AxiosResponse, AxiosError} from "axios";
-import type { NavigateFunction } from 'react-router-dom';
-import {BACKEND_BASE_URL} from "../constants.tsx";
+import { BACKEND_BASE_URL } from '../constants.tsx';
+import {store} from "../redux/store.ts";
+import {reset} from "../redux/features/slices/authSlice.ts";
 
 export const axios_api = axios.create({
-    baseURL: BACKEND_BASE_URL
+  baseURL: BACKEND_BASE_URL,
+  withCredentials: true,
 });
 
-let navigate: NavigateFunction | null = null;
+let isRefreshing = false;
+let failedQueue: any[] = [];
 
-export const setNavigationFunction = (navigationFunction: NavigateFunction) => {
-    navigate = navigationFunction;
+const processQueue = (error: any = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) prom.reject(error);
+    else prom.resolve();
+  });
+  failedQueue = [];
 };
 
 axios_api.interceptors.response.use(
-    (response: AxiosResponse) => response, (error: AxiosError) => {
-        if (error.response && error.response.status === 401) {
-            // Check if it's a login request - don't redirect for login failures
-            const isLoginRequest = error.config?.url?.includes('/login');
-            // Only redirect if it's not a login request
-            if (!isLoginRequest) {
-                // Token expired or unauthorized - redirect to login
-                localStorage.removeItem('user');
-                // Use React Router navigation if available, otherwise fallback to window.location
-                if (navigate) {
-                    navigate('/login');
-                } else {
-                    window.location.href = '/login';
-                }
-            }
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config;
+
+      // We check 401. We DON'T refresh if the failed request WAS the login or refresh endpoint.
+      if (
+          error.response?.status === 401 &&
+          !originalRequest._retry &&
+          !originalRequest.url?.includes('/auth/login') &&
+          !originalRequest.url?.includes('/auth/refresh')
+      ) {
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+              .then(() => axios_api(originalRequest))
+              .catch((err) => Promise.reject(err));
         }
-        return Promise.reject(error)
+
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+          // FastAPI endpoint that verifies the refresh_token cookie and issues new access_token cookie
+          await axios_api.post('/auth/refresh');
+
+          isRefreshing = false;
+          processQueue(null);
+
+          return axios_api(originalRequest);
+        } catch (refreshError) {
+          isRefreshing = false;
+          processQueue(refreshError);
+
+          // OPTIONAL: Clear Redux state here if you export the store
+          store.dispatch(reset())
+          return Promise.reject(refreshError);
+        }
+      }
+      return Promise.reject(error);
     }
-)
+);

@@ -81,10 +81,6 @@ def verify_token(token: str, credentials_exception: HTTPException):
             options={"verify_exp": True},
         )
         token_payload = TokenData(**payload)
-
-        print("NOW:", int(time.time()))
-        print("EXP:", payload["exp"])
-
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

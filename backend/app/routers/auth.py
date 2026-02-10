@@ -36,7 +36,7 @@ async def login(
     try:
         client = OpenMRSClient.get_client()
         response = await client.get(
-            f"{settings.BASE_URL}/session",
+            f"{settings.OPENMRS_BASE_URL}/session",
             auth=(payload["username"], payload["password"]),
             headers={"Accept": "application/json"},
         )
@@ -116,18 +116,22 @@ async def login(
             logger.error(f"unexpected error: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"unexpected error",
+                detail=f"{e}",
             )
 
     except httpx.TimeoutException:
-        logger.error(f"Timeout connecting to OpenMRS at {settings.BASE_URL}/session")
+        logger.error(
+            f"Timeout connecting to OpenMRS at {settings.OPENMRS_BASE_URL}/session"
+        )
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Authentication service is not responding",
         )
 
     except httpx.ConnectError:
-        logger.error(f"Cannot connect to OpenMRS at {settings.BASE_URL}/session")
+        logger.error(
+            f"Cannot connect to OpenMRS at {settings.OPENMRS_BASE_URL}/session"
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Cannot connect to authentication service",
@@ -154,6 +158,7 @@ async def register(
         openmrs_user = await get_openmrs_user(str(user.openmrs_uuid))
 
         user_uuid = openmrs_user.get("uuid")
+        # print(openmrs_user)
         query = """INSERT INTO hayokbps.users (openmrs_uuid) VALUES (%s)"""
         async with connection.cursor() as cursor:
             # check if the user exists on our own db with their uuid
@@ -169,13 +174,13 @@ async def register(
         )
 
     except httpx.TimeoutException:
-        logger.error(f"Timeout connecting to OpenMRS at {settings.BASE_URL}")
+        logger.error(f"Timeout connecting to OpenMRS at {settings.OPENMRS_BASE_URL}")
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Authentication service is not responding",
         )
     except httpx.ConnectError:
-        logger.error(f"Cannot connect to OpenMRS at {settings.BASE_URL}")
+        logger.error(f"Cannot connect to OpenMRS at {settings.OPENMRS_BASE_URL}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Cannot connect to authentication service",
@@ -196,7 +201,6 @@ async def refresh(
     connection=Depends(async_get_db_connection),
 ):
 
-    print(request.cookies)
     provided_refresh_token = request.cookies.get("refresh_token")
 
     if not provided_refresh_token:
@@ -216,7 +220,7 @@ async def refresh(
             )
 
             row = await cursor.fetchone()
-            print(row)
+            # print(row)
             if row is None:
                 raise credentials_exception
 
@@ -249,13 +253,13 @@ async def refresh(
             return {"ok": True}
 
     except httpx.TimeoutException:
-        logger.error(f"Timeout connecting to OpenMRS at {settings.BASE_URL}")
+        logger.error(f"Timeout connecting to OpenMRS at {settings.OPENMRS_BASE_URL}")
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Authentication service is not responding",
         )
     except httpx.ConnectError:
-        logger.error(f"Cannot connect to OpenMRS at {settings.BASE_URL}")
+        logger.error(f"Cannot connect to OpenMRS at {settings.OPENMRS_BASE_URL}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Openmrs server down",

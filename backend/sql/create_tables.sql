@@ -1,31 +1,61 @@
 CREATE TABLE hayokbps.bill (
-	id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-	patient_id INT NOT NULL,
-	visit_id INT NOT NULL,
-	total_amount DECIMAL(10,2) NOT NULL,
-	status ENUM('pending', 'paid', 'cancelled', 'partially_paid'),
-	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    visit_id VARCHAR(100) NOT NULL UNIQUE,  -- One bill per visit
+    patient_id VARCHAR(100) NOT NULL,  -- From OpenMRS
+    patient_name VARCHAR(255),  -- Denormalized for quick display
+    
+    total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,  -- Sum of all items
+    paid_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,   -- Sum of all payments
+    balance DECIMAL(10, 2) NOT NULL DEFAULT 0,       -- total - paid
+    
+    status ENUM('pending', 'paid', 'cancelled', 'partially_paid') NOT NULL DEFAULT 'pending',
+    
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_openmrs_visit_id (visit_id),
+    INDEX idx_patient_id (patient_id),
+    INDEX idx_status (status)
 );
 
-CREATE TABLE hayokbps.bill_item (
+CREATE TABLE hayokbps.bill_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     bill_id INT NOT NULL,
-    order_id INT NOT NULL,
-    concept_name VARCHAR(255) NOT NULL,
-    concept_id INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
+    order_id VARCHAR(100) NOT NULL,  -- Links back to OpenMRS
+    
+    encounter_id VARCHAR(100),  -- Optional but useful
+    
+    -- Item details
+    description VARCHAR(255) NOT NULL,  -- Drug name, test name, etc.
+    item_type ENUM('drug', 'lab', 'procedure', 'consultation', 'admission') NOT NULL,
     quantity INT NOT NULL,
-	status ENUM('pending', 'paid', 'cancelled') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
-        ON UPDATE CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_bill_item_bill
-        FOREIGN KEY (bill_id)
-        REFERENCES hayokbps.bill(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
+    unit_price DECIMAL(10, 2) NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL,
+    
+    -- Payment tracking
+    payment_status ENUM('pending', 'paid', 'refunded') NOT NULL DEFAULT 'pending',
+    payment_id INT,  -- ← Links to the payment that covered this item
+    paid_at DATETIME,
+    
+    -- Dispensing tracking
+    can_dispense BOOLEAN NOT NULL DEFAULT FALSE,  -- True when paid
+    dispensed BOOLEAN NOT NULL DEFAULT FALSE,
+    dispensed_quantity INT,
+    dispensed_at DATETIME,
+    
+    -- Metadata
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (bill_id) REFERENCES hayokbps.bill(id) ON DELETE CASCADE,
+    FOREIGN KEY (payment_id) REFERENCES hayokbps.payments(id) ON DELETE SET NULL,
+    
+    INDEX idx_bill_id (bill_id),
+    INDEX idx_openmrs_order_id (order_id),
+    INDEX idx_payment_status (payment_status),
+    INDEX idx_can_dispense (can_dispense),  -- For pharmacy queue
+    
+    UNIQUE KEY unique_order (order_id)  -- Prevent duplicate billing of same order
 );
 
 CREATE INDEX idx_bill_item_bill_id ON hayokbps.bill_item(bill_id);
@@ -53,6 +83,9 @@ CREATE TABLE hayokbps.price_list (
 CREATE TABLE hayokbps.users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     openmrs_uuid VARCHAR(255) NOT NULL UNIQUE,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    middle_name VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 );
 
@@ -77,4 +110,21 @@ CREATE TABLE hayokbps.user_refresh_tokens (
     expires_at DATETIME NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES hayokbps.users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE hayokbps.payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    bill_id INT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    receipt_number VARCHAR(50) NOT NULL UNIQUE,
+    paid_items_ids JSON,
+    cashier_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 
+    
+     FOREIGN KEY (bill_id) REFERENCES hayokbps.bill(id) ON DELETE CASCADE,
+     FOREIGN KEY (cashier_id) REFERENCES hayokbps.users(id),
+     
+	INDEX idx_bill_id (bill_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_receipt_number (receipt_number)
 );

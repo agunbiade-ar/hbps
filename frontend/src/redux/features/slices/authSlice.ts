@@ -3,8 +3,9 @@ import {
   createSlice,
   type PayloadAction,
 } from '@reduxjs/toolkit';
-import { BACKEND_BASE_URL } from '../../constants';
-import type { User } from '../../constants';
+import { BACKEND_BASE_URL } from '../../../constants';
+import type { User } from '../../../constants';
+import { axios_api } from '../../../api/axios';
 import axios from 'axios';
 
 export type AuthState = {
@@ -14,39 +15,37 @@ export type AuthState = {
 };
 
 const initialState: AuthState = {
-  loading: false,
+  loading: true,
   isAuthenticated: false,
   user: null,
 };
 
 export const SignIn = createAsyncThunk(
   `auth/login`,
-  async (
-    body: { username: string; password: string },
-    { dispatch, rejectWithValue },
-  ) => {
+  async (body: { username: string; password: string }, { rejectWithValue, dispatch }) => {
     try {
       const formData = new URLSearchParams();
 
       formData.append('username', body.username);
       formData.append('password', body.password);
 
-      await axios.post(`${BACKEND_BASE_URL}/auth/login`, formData, {
+      await axios_api.post(`${BACKEND_BASE_URL}/auth/login`, formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         withCredentials: true, //required for cookies, you remember you're setting the httpOnly cookie for your tokens
       });
-      return true;
-    } catch (error) {
+      const user = await dispatch(FetchMe()).unwrap();
+      return user
+    } catch (error: any) {
       if (axios.isAxiosError(error)) {
         if (error.response) {
-          // Backend responded
           return rejectWithValue(
-            error.response.data?.detail || 'Invalid credentials',
+            error.response.data?.detail ?? 'Login failed!',
           );
-        } else if (error.request) {
-          // Request made, no response
+        }
+
+        if (error.request) {
           return rejectWithValue(
             'Cannot reach server. Please try again later.',
           );
@@ -61,55 +60,44 @@ export const FetchMe = createAsyncThunk<User>(
   'auth/fetchMe',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await fetch(`${BACKEND_BASE_URL}/auth/me`, {
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        throw new Error('User not authenticated');
-      }
-      const user = await res.json();
-      return user;
-    } catch {
-      return rejectWithValue(null);
+      const res = await axios_api.get('/auth/me');
+      return res.data;
+    } catch (err) {
+      // console.log(err)
+      return rejectWithValue('Session expired');
     }
   },
 );
 
-export const Logout = createAsyncThunk<void>(
-  'auth/logout',
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await fetch(`${BACKEND_BASE_URL}/auth/logout`, {
-        credentials: 'include',
-        method: 'post',
-      });
-      if (!res.ok) {
-        throw new Error('Logout failed');
-      }
-      return;
-    } catch {
-      return rejectWithValue(null);
-    }
-  },
-);
+export const Logout = createAsyncThunk('auth/logout', async () => {
+  await axios_api.post('/auth/logout');
+
+});
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    reset(state) {
-      state = initialState;
-      return state;
-    },
+    reset: () => initialState,
     setUser: (state, action: PayloadAction<User>) => {
-      return {
-        ...state,
-        user: action.payload,
-      };
+      state.user = action.payload;
+      state.isAuthenticated = true;
     },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(SignIn.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(SignIn.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(SignIn.rejected, (state) => {
+        state.loading = false;
+        state.isAuthenticated = false;
+      })
       .addCase(FetchMe.pending, (state) => {
         state.loading = true;
       })
@@ -123,9 +111,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.loading = false;
       })
-      .addCase(Logout.fulfilled, (state) => {
-        state.user = null;
-      });
+      .addMatcher( action => action.type === Logout.fulfilled.type, () => initialState)
   },
 });
 

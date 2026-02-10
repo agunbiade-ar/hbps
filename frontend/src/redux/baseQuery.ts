@@ -1,5 +1,5 @@
 import { fetchBaseQuery } from '@reduxjs/toolkit/query';
-import { Logout } from './slices/authSlice';
+import { Logout } from './features/slices/authSlice';
 import { BACKEND_BASE_URL } from '../constants';
 
 const rawBaseQuery = fetchBaseQuery({
@@ -19,7 +19,7 @@ export const baseQueryWithReauth: typeof rawBaseQuery = async (
     const refreshResult = await rawBaseQuery(
       {
         url: '/auth/refresh',
-        method: 'post',
+        method: 'POST',
       },
       api,
       extraOptions,

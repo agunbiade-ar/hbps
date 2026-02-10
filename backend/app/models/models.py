@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, List
 from sqlmodel import SQLModel
 from uuid import UUID
 
@@ -26,3 +26,8 @@ class TokenData(SQLModel):
     username: str
     openmrs_uuid: UUID
     exp: int
+
+
+class BillUpdateRequest(BaseModel):
+    item_ids: List[int]
+    status: str

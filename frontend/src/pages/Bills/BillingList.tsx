@@ -77,8 +77,8 @@ const BillingList = () => {
     const statusConfig = {
       paid: { type: 'green' as const, label: 'Paid' },
       pending: { type: 'blue' as const, label: 'Pending' },
-      overdue: { type: 'red' as const, label: 'Overdue' },
-      partial: { type: 'purple' as const, label: 'Partial' },
+      cancelled: { type: 'red' as const, label: 'Cancelled' },
+      partially_paid: { type: 'purple' as const, label: 'Partially paid' },
     };
 
     const config = statusConfig[status];
@@ -107,7 +107,7 @@ const BillingList = () => {
 
   // Handle row click - navigate to bill details
   const handleRowClick = (bill: Bill) => {
-    navigate(`/bills/${bill.id}`, {
+    navigate(`/finance/bills/${bill.id}`, {
       state: {
         bill: bill
       }
@@ -116,8 +116,8 @@ const BillingList = () => {
 
   if (billsQuery.isLoading) {
     return (
-      <div className='billing-list-loading'>
-        <Loading description='Loading bills...' withOverlay={false} />
+      <div className=''>
+        <h3>Loading...</h3>
       </div>
     );
   }
@@ -285,7 +285,7 @@ const BillingList = () => {
                 <TableToolbarContent>
                   <TableToolbarSearch
                     persistent
-                    placeholder='Search by patient identifier, name, or visit ID'
+                    placeholder='Search by patient identifier, name'
                     onChange={(e) => setSearchQuery(e.target.value)}
                     value={searchQuery}
                   />
@@ -308,7 +308,8 @@ const BillingList = () => {
                 <TableBody>
                   {rows.length > 0 ? (
                     rows.map((row) => {
-                      const bill = paginatedBills.find((b) => b.id === row.id);
+                      const bill = paginatedBills.find((b: any) => b.id === row.id);
+                      // console.log(bill)
                       return (
                         <TableRow
                           {...getRowProps({ row })}

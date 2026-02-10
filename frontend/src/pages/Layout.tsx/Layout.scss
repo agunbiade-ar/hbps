@@ -11,6 +11,26 @@
   position: sticky;
   top: 0;
   z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 16px;
+}
+
+.omrs-header__logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.9);
+  text-decoration: none;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.omrs-header__logout:hover {
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .omrs-shell {
@@ -59,7 +79,53 @@
 }
 
 .omrs-nav__label {
-  font-size: 14px;
+  font-size: 1rem;
+}
+
+.omrs-nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.omrs-nav__group-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.omrs-nav__caret {
+  margin-left: auto;
+  transition: transform 160ms ease;
+}
+
+.omrs-nav__caret.open {
+  transform: rotate(180deg);
+}
+
+.omrs-subroutes {
+  display: block;
+  overflow: hidden;
+  max-height: 0;
+  transition:
+    max-height 220ms ease,
+    opacity 180ms ease;
+  opacity: 0;
+  padding-left: 8px;
+}
+
+.omrs-subroutes.open {
+  max-height: 400px;
+  opacity: 1;
+}
+
+.omrs-subroute-item {
+  padding-left: 28px;
 }
 
 .omrs-content {

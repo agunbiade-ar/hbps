@@ -4,17 +4,30 @@ from mysql.connector import Error
 import os
 import time
 from typing import Any
+import decimal
 
 load_dotenv()
 
 
-def get_connection(db_name, user, password, host):
+def get_order_type(raw_order_type: str):
+    raw_order_type = (raw_order_type or "").lower().strip()
+
+    if raw_order_type.startswith("drug"):
+        return "drug"
+    elif raw_order_type.startswith("test"):
+        return "lab"
+    else:
+        return None
+
+
+def get_connection(db_name, user, password, host, port):
     try:
         connection = mysql.connector.connect(
             host=host,
             user=user,
             password=password,
             database=db_name,
+            port=port,
             # This is important for background workers:
             autocommit=True,
         )
@@ -26,16 +39,18 @@ def get_connection(db_name, user, password, host):
 
 source_db = get_connection(
     db_name=os.getenv("OPENMRS_DB"),
-    password=os.getenv("DB_PASSWORD"),
-    host=os.getenv("DB_HOST"),
-    user=os.getenv("DB_USER"),
+    password=os.getenv("OPENMRS_DB_PASSWORD"),
+    host=os.getenv("BILLING_DB_HOST"),
+    user=os.getenv("OPENMRS_DB_USER"),
+    port=os.getenv("OPENMRS_DB_PORT"),
 )
 
 target_db = get_connection(
     db_name=os.getenv("BILLING_DB"),
-    password=os.getenv("DB_PASSWORD"),
-    host=os.getenv("DB_HOST"),
-    user=os.getenv("DB_USER"),
+    password=os.getenv("BILLING_DB_PASSWORD"),
+    host=os.getenv("BILLING_DB_HOST"),
+    user=os.getenv("BILLING_DB_USER"),
+    port=os.getenv("BILLING_DB_PORT"),
 )
 
 
@@ -43,9 +58,9 @@ def get_concepts_from_openmrsDB(source_db):
     cursor = source_db.cursor(dictionary=True, buffered=True)
     query = """
     SELECT c.concept_id, cn.name, cc.name AS class_name
-    FROM server.concept c
-    JOIN server.concept_name cn ON c.concept_id = cn.concept_id
-    JOIN server.concept_class cc ON c.class_id = cc.concept_class_id
+    FROM concept c
+    JOIN concept_name cn ON c.concept_id = cn.concept_id
+    JOIN concept_class cc ON c.class_id = cc.concept_class_id
     WHERE cn.locale = 'en' 
     AND cn.concept_name_type = 'FULLY_SPECIFIED'
     AND cc.name IN ('Test', 'Procedure', 'Drug')"""
@@ -66,7 +81,22 @@ def insert_concepts_price_to_db(source_db, target_db):
     category = VALUES(category);
     """
     # Prepare a list of tuples from your dictionary rows
-    data = [(row["concept_id"], row["name"], row["class_name"]) for row in rows]
+
+    CLASS_MAP = {
+        "drug": "drug",
+        "drug order": "drug",
+        "test": "lab",
+        "test order": "lab",
+        "lab test": "lab",
+    }
+
+    data = []
+    for row in rows:
+        # print(row)
+        parts = row["class_name"].split()
+        first_word = parts[0].lower() if parts else ""
+        normalized_class = CLASS_MAP.get(first_word, row["class_name"])
+        data.append((row["concept_id"], row["name"], normalized_class))
 
     # Batch insert
     cursor.executemany(insert_query, data)
@@ -80,14 +110,12 @@ def update_bill_total_amount(target_db, bill_id):
 
     try:
         # 1. Let MySQL do the math (much faster)
-        sum_query = (
-            "SELECT SUM(price) as total FROM hayokbps.bill_item WHERE bill_id = %s"
-        )
+        sum_query = "SELECT SUM(total_price) as total_price FROM hayokbps.bill_items WHERE bill_id = %s"
         cursor.execute(sum_query, (bill_id,))
         result = cursor.fetchone()
 
         # Default to 0 if there are no items
-        total_price = result["total"] if result["total"] else 0
+        total_price = result["total_price"] if result["total_price"] else 0
 
         # 2. Update the parent bill table so the Cashier sees the total
         update_query = "UPDATE hayokbps.bill SET total_amount = %s WHERE id = %s"
@@ -137,52 +165,57 @@ def create_bill_in_targetDB(order, source_db, target_db):
         target_db_cursor.execute(existing_bill_query, (visit_id,))
         existing_bill = target_db_cursor.fetchone()
 
+        unit_price = get_price(order.get("concept_id"), target_db_cursor)
+        quantity = order.get("quantity", 1)
+
+        print(f"order type: {order.get("order_type")}")
+        order_type = get_order_type(raw_order_type=order.get("order_type"))
+        if order_type is None:
+            raise ValueError("weird order-type passed in, exiting...")
+
+        total_price = decimal.Decimal(quantity) * price
+        params = [
+            order.get("order_id"),
+            order.get("encounter_id"),
+            order.get("concept_name"),
+            order_type,
+            quantity,
+            unit_price,
+            total_price,
+        ]
+
         if existing_bill:
             bill_id = existing_bill.get("id")
-            add_item_query = """INSERT INTO hayokbps.bill_item (bill_id, order_id, concept_name, concept_id, price, quantity) 
-                                VALUES (%s, %s, %s, %s, %s, %s)"""
+            add_item_query = """INSERT INTO hayokbps.bill_items (bill_id, order_id, encounter_id, description, item_type, quantity, unit_price, total_price) 
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+
             target_db_cursor.execute(
                 add_item_query,
-                (
-                    bill_id,
-                    order.get("order_id"),
-                    order.get("concept_name"),
-                    order.get("concept_id"),
-                    price,
-                    order.get("quantity", 1),
-                ),
+                tuple([bill_id] + params),
             )
             print(f"Added item to existing bill {bill_id}")
         else:
             # 4. Create NEW bill
-            create_bill_query = """INSERT INTO hayokbps.bill (patient_id, visit_id, total_amount, status, patient_name) 
-                                   VALUES (%s, %s, %s, %s, %s)"""
+            create_bill_query = """INSERT INTO hayokbps.bill (visit_id, patient_id, patient_name) VALUES (%s, %s, %s)"""
+
+            patient_name = f"{order.get('family_name') or ''} {order.get('given_name') or ''} {order.get('middle_name') or ''}"
+
+            bill_params = [visit_id, encounter.get("patient_id"), patient_name]
             target_db_cursor.execute(
                 create_bill_query,
-                (
-                    encounter.get("patient_id"),
-                    visit_id,
-                    0,
-                    "pending",
-                    f"{order.get('family_name') or ''} {order.get('given_name') or ''} {order.get('middle_name') or ''}",
-                ),
+                tuple(bill_params),
             )
             bill_id = target_db_cursor.lastrowid
 
+            # print(order.get("item_type"))
             # 5. Create NEW bill item
-            create_item_query = """INSERT INTO hayokbps.bill_item 
-                                   (bill_id, order_id, concept_name, concept_id, price, quantity) 
-                                   VALUES (%s, %s, %s, %s, %s, %s)"""
+            create_item_query = """INSERT INTO hayokbps.bill_items 
+                                   (bill_id, order_id, encounter_id, description, item_type, quantity, unit_price, total_price) 
+                                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+
             target_db_cursor.execute(
                 create_item_query,
-                (
-                    bill_id,
-                    order.get("order_id"),
-                    order.get("concept_name"),
-                    order.get("concept_id"),
-                    price,
-                    order.get("quantity", 1),
-                ),
+                tuple([bill_id] + params),
             )
 
             update_bill_total_amount(target_db=target_db, bill_id=bill_id)
@@ -219,6 +252,25 @@ def update_last_processed_bill(target_db, current_id):
     cursor.close()
 
 
+def get_price(concept_id, target_db_cursor):
+    """Look up price for an OpenMRS concept"""
+
+    print(concept_id)
+
+    target_db_cursor.execute(
+        "SELECT price FROM hayokbps.price_list WHERE concept_id = %s", (concept_id,)
+    )
+
+    price_record = target_db_cursor.fetchone()
+
+    if price_record:
+        return decimal.Decimal(price_record["price"])
+    else:
+        # Price not found
+        print(f"No price found for concept_id: {concept_id}")
+        return decimal.Decimal("0.00")
+
+
 def poll_orders():
     global source_db
     global target_db
@@ -232,9 +284,10 @@ def poll_orders():
                 print("Reconnecting to database...")
                 source_db = get_connection(
                     db_name=os.getenv("OPENMRS_DB"),
-                    password=os.getenv("DB_PASSWORD"),
-                    host=os.getenv("DB_HOST"),
-                    user=os.getenv("DB_USER"),
+                    password=os.getenv("OPENMRS_DB_PASSWORD"),
+                    host=os.getenv("BILLING_DB_HOST"),
+                    user=os.getenv("OPENMRS_DB_USER"),
+                    port=os.getenv("OPENMRS_DB_PORT"),
                 )
             if source_db is None:
                 print("Failed to reconnect.")
@@ -253,18 +306,20 @@ def poll_orders():
             o.patient_id, 
             o.concept_id, 
             cn.name AS concept_name, 
-            do.quantity
-        FROM server.orders o
-        JOIN server.person_name pn ON o.patient_id = pn.person_id AND pn.voided = 0
-        JOIN server.concept_name cn ON o.concept_id = cn.concept_id
-        -- Corrected Join: Join on order_id, not patient_id
-        LEFT JOIN server.drug_order do ON o.order_id = do.order_id
-        WHERE o.order_id > %s
+            do.quantity,
+            ot.name AS order_type
+            FROM orders o
+            JOIN order_type ot ON ot.order_type_id = o.order_type_id AND ot.retired = 0
+            JOIN person_name pn ON o.patient_id = pn.person_id AND pn.voided = 0
+            JOIN concept_name cn ON o.concept_id = cn.concept_id
+            -- Corrected Join: Join on order_id, not patient_id
+            LEFT JOIN drug_order do ON o.order_id = do.order_id
+            WHERE o.order_id > %s
             AND o.voided = 0
             AND cn.locale = 'en' 
             AND cn.concept_name_type = 'FULLY_SPECIFIED'
             AND cn.voided = 0
-        ORDER BY o.order_id ASC"""
+            ORDER BY o.order_id ASC"""
 
             cursor.execute(query, (last_processed_id,))  # type: ignore
 
@@ -274,7 +329,7 @@ def poll_orders():
                     break
 
                 for order in rows:
-                    print(f"order {order}")
+                    # print(f"order {order}")
                     print(f"Processing new order: {order.get("order_id")}")  # type: ignore
 
                     quantity = order.get("quantity")  # type: ignore
