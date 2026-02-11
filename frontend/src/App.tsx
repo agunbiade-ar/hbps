@@ -46,7 +46,10 @@ function App() {
         <Route
           path='/'
           element={
-            <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />
+            <Navigate
+              to={isAuthenticated ? '/finance/bills' : '/login'}
+              replace
+            />
           }
         />
 
@@ -60,12 +63,11 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path='/dashboard' element={<Dashboard />} />
+          {/* <Route path='/dashboard' element={<Dashboard />} /> */}
           <Route path='/finance' element={<FinanceLayout />}>
             <Route path='/finance/bills' element={<BillingList />} />
             <Route path='/finance/bills/:id' element={<BillDetailApproval />} />
             <Route path='/finance/payments' element={<PaymentsList />} />
-            {/* <Route path='/payments/:id' element={<BillingList />} /> */}
           </Route>
         </Route>
       </Routes>

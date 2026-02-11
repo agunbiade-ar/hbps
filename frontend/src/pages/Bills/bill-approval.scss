@@ -1,7 +1,7 @@
-// Import healthcare color palette
-$healthcare-primary: #0f62fe;
-$healthcare-primary-light: #4589ff;
-$healthcare-primary-lighter: #d0e2ff;
+// Import healthcare color palette from billing-list
+$healthcare-primary: #086b56;
+$healthcare-primary-light: #0f9370;
+$healthcare-primary-lighter: #d4ede7;
 $healthcare-secondary: #24a148;
 $healthcare-secondary-light: #6fdc8c;
 $healthcare-accent: #42be65;
@@ -14,23 +14,24 @@ $healthcare-neutral-700: #525252;
 $healthcare-neutral-900: #161616;
 $healthcare-white: #ffffff;
 
+// Additional status colors
+$status-paid: #24a148;
+$status-pending: #086b56;
+$status-overdue: #da1e28;
+$status-partial: #8a3ffc;
+
 // Shadows
-$shadow-soft: 0 2px 8px rgba(15, 98, 254, 0.08);
-$shadow-medium: 0 4px 16px rgba(15, 98, 254, 0.12);
-$shadow-large: 0 8px 32px rgba(15, 98, 254, 0.16);
+$shadow-soft: 0 2px 8px rgba(8, 107, 86, 0.08);
+$shadow-medium: 0 4px 16px rgba(8, 107, 86, 0.12);
+$shadow-large: 0 8px 32px rgba(8, 107, 86, 0.16);
 
 // Animation
 $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 
-// Print-only header (hidden on screen)
-.bill-detail-print-header {
-  display: none;
-}
-
 // Main container
 .bill-detail-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 50%, #f5fdf7 100%);
+  background: linear-gradient(135deg, #ecf5f2 0%, #e4ede8 50%, #f0f5f3 100%);
   padding: 2rem;
   animation: fadeIn 0.5s $ease-smooth;
 
@@ -48,15 +49,9 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+// Print-only header
+.bill-detail-print-header {
+  display: none;
 }
 
 // Header section
@@ -65,44 +60,76 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  gap: 1.5rem;
   animation: slideDown 0.6s $ease-smooth;
 
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: stretch;
-    gap: 1rem;
   }
 
   &__back {
     :global(.cds--btn) {
-      color: $healthcare-neutral-700;
+      color: $healthcare-primary;
+      border-radius: 8px;
       transition: all 0.3s $ease-smooth;
 
       &:hover {
-        color: $healthcare-primary;
-        background: rgba(15, 98, 254, 0.08);
+        background: rgba(8, 107, 86, 0.08);
       }
     }
   }
 
   &__actions {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
+    align-items: center;
 
     @media (max-width: 768px) {
       flex-direction: column;
+      width: 100%;
+    }
+  }
+
+  &__update {
+    :global(.cds--btn) {
+      border-radius: 8px;
+      background: linear-gradient(
+        135deg,
+        $healthcare-primary 0%,
+        $healthcare-primary-light 100%
+      );
+      border: none;
+      padding: 0.875rem 1.5rem;
+      font-weight: 500;
+      box-shadow: $shadow-soft;
+      transition: all 0.3s $ease-smooth;
+
+      &:hover {
+        background: linear-gradient(
+          135deg,
+          darken($healthcare-primary, 5%) 0%,
+          $healthcare-primary 100%
+        );
+        box-shadow: $shadow-medium;
+        transform: translateY(-2px);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
     }
   }
 
   &__approve {
     :global(.cds--btn) {
+      border-radius: 8px;
       background: linear-gradient(
         135deg,
         $healthcare-secondary 0%,
         $healthcare-secondary-light 100%
       );
       border: none;
-      border-radius: 8px;
       padding: 0.875rem 1.5rem;
       font-weight: 500;
       box-shadow: $shadow-soft;
@@ -117,19 +144,23 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: $shadow-medium;
         transform: translateY(-2px);
       }
+
+      &:active {
+        transform: translateY(0);
+      }
     }
   }
 
   &__print {
     :global(.cds--btn) {
       border-radius: 8px;
-      border: 1.5px solid $healthcare-primary;
-      color: $healthcare-primary;
+      border: 1.5px solid $healthcare-neutral-200;
+      color: $healthcare-neutral-900;
       transition: all 0.3s $ease-smooth;
 
       &:hover {
-        background: rgba(15, 98, 254, 0.08);
-        border-color: $healthcare-primary-light;
+        background: rgba(8, 107, 86, 0.04);
+        border-color: $healthcare-primary;
       }
     }
   }
@@ -157,48 +188,41 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
-// Loading state
-.bill-detail-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 60vh;
-  animation: fadeIn 0.3s $ease-smooth;
-
-  :global(.cds--loading) {
-    stroke: $healthcare-primary;
-  }
-}
-
-// Error state
-.bill-detail-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  gap: 2rem;
-}
-
 // Content wrapper
 .bill-detail-content {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  animation: fadeIn 0.6s $ease-smooth 0.3s backwards;
+  animation: slideUp 0.6s $ease-smooth 0.2s backwards;
 }
 
-// Bill header card
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Bill Header Card
 .bill-detail-card {
   background: $healthcare-white;
   border-radius: 12px;
-  padding: 2rem;
   box-shadow: $shadow-medium;
   border: 1px solid rgba(255, 255, 255, 0.8);
-  animation: slideUp 0.6s $ease-smooth 0.4s backwards;
+  overflow: hidden;
 
   &__header {
-    margin-bottom: 2rem;
+    background: linear-gradient(
+      135deg,
+      $healthcare-primary-lighter 0%,
+      rgba(212, 237, 231, 0.5) 100%
+    );
+    padding: 1.5rem;
+    border-bottom: 2px solid $healthcare-neutral-200;
   }
 
   &__title-section {
@@ -209,7 +233,6 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 
   &__icon {
     color: $healthcare-primary;
-    flex-shrink: 0;
   }
 
   &__title {
@@ -227,25 +250,24 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 
   &__status {
     margin-top: 0.5rem;
+
+    :global(.cds--tag) {
+      border-radius: 6px;
+      font-weight: 500;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.8125rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
   }
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-// Info grid
+// Info Grid
 .bill-detail-info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
+  padding: 1.5rem;
 }
 
 .bill-detail-info-item {
@@ -258,53 +280,44 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     color: $healthcare-neutral-700;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.02em;
   }
 
   &__value {
     font-size: 1rem;
     color: $healthcare-neutral-900;
-    font-weight: 500;
+    font-weight: 600;
 
     &--identifier {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.375rem 0.75rem;
-      background: rgba(15, 98, 254, 0.08);
-      border-radius: 6px;
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.875rem;
-      font-weight: 600;
       color: $healthcare-primary;
+      background: rgba(8, 107, 86, 0.08);
+      padding: 0.375rem 0.75rem;
+      border-radius: 6px;
+      display: inline-block;
       width: fit-content;
     }
   }
 }
 
-// Bill items card
+// Bill Items Card
 .bill-detail-items-card {
   background: $healthcare-white;
   border-radius: 12px;
-  padding: 2rem;
   box-shadow: $shadow-medium;
   border: 1px solid rgba(255, 255, 255, 0.8);
-  animation: slideUp 0.6s $ease-smooth 0.5s backwards;
+  overflow: hidden;
 
   &__title {
     font-size: 1.25rem;
     font-weight: 600;
     color: $healthcare-neutral-900;
-    margin-bottom: 1.5rem;
-    font-family:
-      'IBM Plex Sans',
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      sans-serif;
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 2px solid $healthcare-neutral-200;
   }
 }
 
-// Items table
+// Items Table
 .bill-detail-items-table {
   :global {
     .cds--data-table {
@@ -326,16 +339,25 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
           transition: all 0.2s $ease-smooth;
 
           &:hover {
-            background: rgba(15, 98, 254, 0.04);
+            background: rgba(8, 107, 86, 0.04);
           }
 
           td {
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid $healthcare-neutral-200;
+            color: $healthcare-neutral-900;
             font-size: 0.9375rem;
           }
         }
       }
+    }
+
+    .cds--checkbox-wrapper {
+      margin: 0;
+    }
+
+    .cds--checkbox-label {
+      padding-left: 0;
     }
   }
 }
@@ -345,23 +367,18 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   color: $healthcare-neutral-900;
 }
 
-.bill-detail-item-category {
-  display: inline-flex;
-  padding: 0.25rem 0.75rem;
-  background: rgba(15, 98, 254, 0.08);
-  border-radius: 6px;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: $healthcare-primary;
-}
-
 .bill-detail-item-quantity {
-  font-weight: 500;
-  color: $healthcare-neutral-900;
+  font-weight: 600;
+  color: $healthcare-neutral-700;
+  background: $healthcare-neutral-100;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  display: inline-block;
 }
 
 .bill-detail-item-price {
-  color: $healthcare-neutral-700;
+  font-weight: 500;
+  color: $healthcare-neutral-900;
 }
 
 .bill-detail-item-total {
@@ -370,14 +387,13 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 1rem;
 }
 
-// Summary card
+// Summary Card
 .bill-detail-summary-card {
   background: $healthcare-white;
   border-radius: 12px;
-  padding: 2rem;
   box-shadow: $shadow-medium;
   border: 1px solid rgba(255, 255, 255, 0.8);
-  animation: slideUp 0.6s $ease-smooth 0.6s backwards;
+  overflow: hidden;
   max-width: 500px;
   margin-left: auto;
 
@@ -389,26 +405,20 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 1.25rem;
     font-weight: 600;
     color: $healthcare-neutral-900;
-    margin-bottom: 1.5rem;
-    font-family:
-      'IBM Plex Sans',
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      sans-serif;
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 2px solid $healthcare-neutral-200;
   }
 }
 
 .bill-detail-summary-items {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  padding: 1.5rem;
 }
 
 .bill-detail-summary-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0.75rem 0;
 
   &__label {
     font-size: 0.9375rem;
@@ -427,77 +437,53 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   &--total {
+    margin-top: 0.5rem;
     padding-top: 1rem;
+    border-top: 2px solid $healthcare-neutral-200;
 
     .bill-detail-summary-item__label {
       font-size: 1.125rem;
-      color: $healthcare-neutral-900;
       font-weight: 600;
+      color: $healthcare-neutral-900;
     }
 
     .bill-detail-summary-item__value {
       font-size: 1.5rem;
-      color: $healthcare-secondary;
       font-weight: 700;
+      color: $healthcare-primary;
     }
   }
 }
 
 .bill-detail-summary-divider {
-  height: 2px;
+  height: 1px;
   background: $healthcare-neutral-200;
   margin: 0.5rem 0;
 }
 
-.bill-detail-summary-notes {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid $healthcare-neutral-200;
-
-  &__label {
-    font-size: 0.875rem;
-    color: $healthcare-neutral-700;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  &__text {
-    margin-top: 0.5rem;
-    font-size: 0.9375rem;
-    color: $healthcare-neutral-900;
-    line-height: 1.6;
-  }
-}
-
-// Modal styling
+// Modal
 .bill-detail-modal {
   &__text {
-    margin-bottom: 1.5rem;
     font-size: 0.9375rem;
-    color: $healthcare-neutral-900;
-    line-height: 1.5;
+    color: $healthcare-neutral-700;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
   }
 
   &__details {
     background: $healthcare-neutral-100;
     border-radius: 8px;
     padding: 1rem;
-    margin-top: 1rem;
+    border-left: 3px solid $healthcare-primary;
 
     p {
+      margin: 0.5rem 0;
       font-size: 0.875rem;
-      color: $healthcare-neutral-900;
-      margin-bottom: 0.5rem;
-      line-height: 1.5;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
+      color: $healthcare-neutral-700;
 
       strong {
-        font-weight: 600;
         color: $healthcare-neutral-900;
+        font-weight: 600;
       }
     }
   }
@@ -507,60 +493,51 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   .cds--modal {
     .cds--modal-container {
       border-radius: 12px;
-      box-shadow: $shadow-large;
     }
 
     .cds--modal-header {
-      padding: 1.5rem 1.5rem 1rem;
+      background: $healthcare-primary-lighter;
+      border-bottom: 2px solid $healthcare-neutral-200;
 
       .cds--modal-header__heading {
-        font-size: 1.25rem;
-        font-weight: 600;
         color: $healthcare-neutral-900;
+        font-weight: 600;
       }
     }
 
-    .cds--modal-content {
-      padding: 0 1.5rem 1.5rem;
+    .cds--btn--primary {
+      border-radius: 8px;
+      background: linear-gradient(
+        135deg,
+        $healthcare-secondary 0%,
+        $healthcare-secondary-light 100%
+      );
+      border: none;
+      transition: all 0.3s $ease-smooth;
+
+      &:hover {
+        background: linear-gradient(
+          135deg,
+          darken($healthcare-secondary, 5%) 0%,
+          $healthcare-secondary 100%
+        );
+        box-shadow: $shadow-soft;
+      }
     }
 
-    .cds--modal-footer {
-      padding: 1rem 1.5rem;
-      border-top: 1px solid $healthcare-neutral-200;
+    .cds--btn--secondary {
+      border-radius: 8px;
+      border: 1.5px solid $healthcare-neutral-200;
+      transition: all 0.3s $ease-smooth;
 
-      .cds--btn {
-        border-radius: 8px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 500;
-        transition: all 0.3s $ease-smooth;
-
-        &.cds--btn--primary {
-          background: linear-gradient(
-            135deg,
-            $healthcare-secondary 0%,
-            $healthcare-secondary-light 100%
-          );
-          border: none;
-
-          &:hover:not(:disabled) {
-            background: linear-gradient(
-              135deg,
-              darken($healthcare-secondary, 5%) 0%,
-              $healthcare-secondary 100%
-            );
-            box-shadow: $shadow-soft;
-          }
-
-          &:disabled {
-            background: $healthcare-neutral-200;
-            color: $healthcare-neutral-700;
-          }
-        }
+      &:hover {
+        background: rgba(8, 107, 86, 0.04);
+        border-color: $healthcare-primary;
       }
     }
   }
 
-  // Custom tag styling
+  // Tag styling
   .cds--tag {
     border-radius: 6px;
     font-weight: 500;
@@ -570,192 +547,127 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 
     &.cds--tag--green {
       background: rgba(36, 161, 72, 0.1);
-      color: $healthcare-secondary;
+      color: $status-paid;
     }
 
     &.cds--tag--blue {
-      background: rgba(15, 98, 254, 0.1);
-      color: $healthcare-primary;
+      background: rgba(8, 107, 86, 0.1);
+      color: $status-pending;
     }
 
     &.cds--tag--red {
       background: rgba(218, 30, 40, 0.1);
-      color: $healthcare-error;
+      color: $status-overdue;
+    }
+
+    &.cds--tag--purple {
+      background: rgba(138, 63, 252, 0.1);
+      color: $status-partial;
     }
   }
 }
 
-// Print styles for mobile thermal printers (58mm or 80mm)
-@media print {
-  // Hide screen-only elements
-  .no-print,
-  .bill-detail-header,
-  .bill-detail-notification {
+// Loading state
+.bill-detail-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  animation: fadeIn 0.3s $ease-smooth;
+
+  :global(.cds--loading) {
+    stroke: $healthcare-primary;
+  }
+}
+
+// Error state
+.bill-detail-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1.5rem;
+  padding: 2rem;
+
+  :global(.cds--inline-notification) {
+    max-width: 500px;
+    border-radius: 8px;
+  }
+}
+
+// No print class for screen-only elements
+.no-print {
+  @media print {
     display: none !important;
   }
+}
 
-  // Show print header
+// Print styles
+@media print {
+  .bill-detail-container {
+    background: $healthcare-white;
+    padding: 1rem;
+  }
+
   .bill-detail-print-header {
     display: block;
     text-align: center;
-    padding: 1rem 0;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
     border-bottom: 2px solid $healthcare-neutral-900;
-    margin-bottom: 1rem;
 
     h1 {
-      font-size: 1.25rem;
+      font-size: 1.5rem;
       font-weight: 700;
       margin-bottom: 0.5rem;
     }
 
     p {
-      font-size: 0.75rem;
-      margin-bottom: 0.25rem;
+      margin: 0.25rem 0;
+      font-size: 0.875rem;
     }
   }
 
-  // Reset container
-  .bill-detail-container {
-    background: $healthcare-white;
-    padding: 0;
-    margin: 0;
-    width: 100%;
-    max-width: 80mm; // For 80mm thermal printer
-  }
-
-  .bill-detail-content {
-    gap: 1rem;
-  }
-
-  // Simplify cards for print
   .bill-detail-card,
   .bill-detail-items-card,
   .bill-detail-summary-card {
     box-shadow: none;
     border: 1px solid $healthcare-neutral-900;
-    border-radius: 0;
-    padding: 1rem;
     page-break-inside: avoid;
   }
 
-  .bill-detail-card__title {
-    font-size: 1.25rem;
-  }
-
-  .bill-detail-info-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  .bill-detail-info-item {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
+  .bill-detail-content {
     gap: 1rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px dashed $healthcare-neutral-300;
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    &__label {
-      font-size: 0.75rem;
-      text-transform: none;
-    }
-
-    &__value {
-      font-size: 0.875rem;
-      text-align: right;
-
-      &--identifier {
-        background: none;
-        padding: 0;
-        font-family: inherit;
-      }
-    }
-  }
-
-  // Simplify table for print
-  .bill-detail-items-table {
-    :global {
-      .cds--data-table {
-        thead th {
-          font-size: 0.75rem;
-          padding: 0.5rem;
-          background: $healthcare-neutral-100;
-        }
-
-        tbody td {
-          font-size: 0.75rem;
-          padding: 0.5rem;
-        }
-      }
-    }
-  }
-
-  .bill-detail-item-category {
-    background: none;
-    padding: 0;
-    font-weight: 600;
-  }
-
-  // Summary for print
-  .bill-detail-summary-card {
-    max-width: 100%;
-    margin-left: 0;
-  }
-
-  .bill-detail-summary-item {
-    &__label {
-      font-size: 0.875rem;
-    }
-
-    &__value {
-      font-size: 0.875rem;
-    }
-
-    &--total {
-      padding-top: 0.75rem;
-      border-top: 2px solid $healthcare-neutral-900;
-
-      .bill-detail-summary-item__label {
-        font-size: 1rem;
-      }
-
-      .bill-detail-summary-item__value {
-        font-size: 1.25rem;
-      }
-    }
-  }
-
-  .bill-detail-summary-divider {
-    display: none;
-  }
-
-  // Print footer
-  .bill-detail-container::after {
-    content: '--------------------------------';
-    display: block;
-    text-align: center;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px dashed $healthcare-neutral-300;
-    font-size: 0.75rem;
-    color: $healthcare-neutral-700;
   }
 }
 
 // Responsive adjustments
+@media (max-width: 1024px) {
+  .bill-detail-items-table {
+    :global {
+      .cds--data-table {
+        font-size: 0.875rem;
+
+        thead th,
+        tbody td {
+          padding: 1rem;
+        }
+      }
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .bill-detail-card,
   .bill-detail-items-card,
   .bill-detail-summary-card {
-    padding: 1.5rem;
+    border-radius: 8px;
   }
 
   .bill-detail-info-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .bill-detail-items-table {
@@ -766,46 +678,25 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
           padding: 0.75rem 0.5rem;
           font-size: 0.8125rem;
         }
-
-        // Checkbox column styling
-        thead th:first-child,
-        tbody td:first-child {
-          width: 50px;
-          text-align: center;
-
-          .cds--checkbox-label {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-          }
-        }
-
-        tbody td:first-child {
-          .cds--checkbox-label {
-            padding: 0;
-          }
-        }
       }
     }
   }
 
-  .bill-detail-header__update {
-    animation: slideInLeft 0.3s $ease-smooth;
+  .bill-detail-summary-card {
+    margin-left: 0;
   }
 }
 
-// Accessibility
+// Accessibility - reduced motion
 @media (prefers-reduced-motion: reduce) {
   .bill-detail-container,
   .bill-detail-header,
-  .bill-detail-content,
-  .bill-detail-card,
-  .bill-detail-items-card,
-  .bill-detail-summary-card {
+  .bill-detail-content {
     animation: none;
   }
 
-  .bill-detail-header__approve :global(.cds--btn):hover {
+  .bill-detail-header__approve :global(.cds--btn):hover,
+  .bill-detail-header__update :global(.cds--btn):hover {
     transform: none;
   }
 }

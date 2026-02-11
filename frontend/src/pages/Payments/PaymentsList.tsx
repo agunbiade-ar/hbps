@@ -18,23 +18,31 @@ import {
   DatePickerInput,
   Toggle,
 } from '@carbon/react';
-import { Add, Wallet, Printer } from '@carbon/icons-react';
+import { Wallet, Printer } from '@carbon/icons-react';
 import './payments-list.scss';
 import { useGetAllPaymentsQuery } from '../../api/Payments';
-import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+
+export interface BillItem {
+  description: string;
+  unit_price: number;
+  quantity: number;
+  category: string;
+}
 
 export interface Payment {
   id: string;
   receipt_number: string;
   amount: number;
   patient_name: string;
+  cashier_name: string;
   bill_id: string;
   created_at: string;
   updated_at: string;
+  bill_items?: BillItem[];
 }
 
 const PaymentsList = () => {
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
 
@@ -47,20 +55,13 @@ const PaymentsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
 
-  // Format date for API (YYYY-MM-DD)
-  const formatDateForAPI = (date: string) => {
-    if (!date) return undefined;
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
-  };
-
   const paymentsQuery = useGetAllPaymentsQuery(
     {
       offset: pageSize * (currentPage - 1),
       receipt_number: searchQuery,
       limit: pageSize,
-      start_date: todayOnly ? undefined : formatDateForAPI(startDate),
-      end_date: todayOnly ? undefined : formatDateForAPI(endDate),
+      start_date: todayOnly ? '' : startDate,
+      end_date: todayOnly ? '' : endDate,
       today: todayOnly,
     },
     {
@@ -137,8 +138,8 @@ const PaymentsList = () => {
   // Handle date range change
   const handleDateRangeChange = (dates: Date[]) => {
     if (dates.length === 2) {
-      setStartDate(dates[0].toISOString());
-      setEndDate(dates[1].toISOString());
+      setStartDate(format(dates[0], 'yyyy-MM-dd'));
+      setEndDate(format(dates[1], 'yyyy-MM-dd'));
       setTodayOnly(false); // Disable today filter when date range is selected
       setCurrentPage(1); // Reset to first page
     }
@@ -353,6 +354,46 @@ const PaymentsList = () => {
           </div>
 
           <div class="receipt-divider"></div>
+         
+          <div class="receipt-details">
+            <div class="receipt-row">
+              <span>Cashier:</span>
+            </div>
+            <div class="receipt-row">
+              <span><strong>${payment.cashier_name}</strong></span>
+            </div>
+          </div>
+
+          <div class="receipt-divider"></div>
+
+          <div class="receipt-items" style="margin: 15px 0;">
+            <div class="receipt-row label" style="font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 10px;">
+              <span style="flex: 1;">Description</span>
+              <span style="flex: 0.4; text-align: right;">Qty</span>
+              <span style="flex: 0.6; text-align: right;">Amount</span>
+            </div>
+            ${
+              payment.bill_items && payment.bill_items.length > 0
+                ? payment.bill_items
+                    .map(
+                      (item) => `
+              <div class="receipt-row" style="font-size: 11px; padding-bottom: 8px;">
+                <span style="flex: 1;">${item.description}</span>
+                <span style="flex: 0.4; text-align: right;">${item.quantity}</span>
+                <span style="flex: 0.6; text-align: right;">${formatCurrency(item.unit_price * item.quantity)}</span>
+              </div>
+            `,
+                    )
+                    .join('')
+                : '<div class="receipt-row" style="text-align: center; padding: 10px 0;"><span>No items</span></div>'
+            }
+            <div class="receipt-row" style="font-size: 11px; color: #666; margin-top: 10px;">
+              <span style="flex: 1; text-align: right;">Subtotal:</span>
+              <span style="flex: 0.6; text-align: right;">${formatCurrency(payment.amount)}</span>
+            </div>
+          </div>
+
+          <div class="receipt-divider"></div>
 
           <div class="receipt-total">
             <div class="receipt-total-row">
@@ -390,27 +431,11 @@ const PaymentsList = () => {
   const headers = [
     { key: 'receiptNumber', header: 'Receipt Number' },
     { key: 'patientName', header: 'Patient Name' },
+    { key: 'cashierName', header: 'Cashier' },
     { key: 'amount', header: 'Amount' },
     { key: 'createdAt', header: 'Date' },
     { key: 'actions', header: 'Actions' },
   ];
-
-  // Handle row click - navigate to payment details
-  const handleRowClick = (payment: Payment) => {
-    navigate(`/finance/payments/${payment.id}`, {
-      state: {
-        payment: payment,
-      },
-    });
-  };
-
-  if (paymentsQuery.isLoading) {
-    return (
-      <div className=''>
-        <h3>Loading...</h3>
-      </div>
-    );
-  }
 
   return (
     <div className='payments-list-container'>
@@ -535,15 +560,16 @@ const PaymentsList = () => {
                       const payment = paginatedPayments.find(
                         (p: any) => p.id === row.id,
                       );
+                      console.log(payment);
                       return (
                         <TableRow
                           {...getRowProps({ row })}
                           key={row.id}
-                          onClick={() => handleRowClick(payment)}
                           className='payments-list-table__row'
                         >
                           <TableCell>{payment?.receipt_number}</TableCell>
                           <TableCell>{payment?.patient_name}</TableCell>
+                          <TableCell>{payment?.cashier_name}</TableCell>
                           <TableCell>
                             <span className='payments-list-table__amount'>
                               {payment && formatCurrency(payment.amount)}

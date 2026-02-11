@@ -79,7 +79,7 @@ const Layout: React.FC<LayoutProps> = ({ title = '', children }) => {
           aria-label='Toggle sidebar'
           onClick={() => setCollapsed((s) => !s)}
         />
-        <HeaderName href='/bills' prefix='HBPS'>
+        <HeaderName href='' prefix='HBPS'>
           {title}
         </HeaderName>
         {/* <Button

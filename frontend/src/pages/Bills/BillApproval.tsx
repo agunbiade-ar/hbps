@@ -17,7 +17,7 @@ import {
 } from '@carbon/react';
 import {
   CheckmarkFilled,
-  Printer,
+  // Printer,
   ArrowLeft,
   Receipt,
 } from '@carbon/icons-react';
@@ -53,8 +53,8 @@ const BillDetailApproval = () => {
   const bill = location.state['bill'];
 
   const billQuery = useGetBillQuery({ id: bill?.id });
-  const [ updateBill, {isLoading: isUpdating}] = useUpdateBillMutation();
-  console.log(billQuery)
+  const [updateBill, { isLoading: isUpdating }] = useUpdateBillMutation();
+  console.log(billQuery);
 
   const billItems: BillWithItems = useMemo(() => {
     const billsData = billQuery.data || [];
@@ -118,34 +118,32 @@ const BillDetailApproval = () => {
 
   const handleUpdateConfirm = async (item_ids: number[]) => {
     if (item_ids.length === 0) {
-      setError('No item was selected!')
-      return
+      setError('No item was selected!');
+      return;
     }
 
     try {
       setIsProcessing(isUpdating);
-      setError("")
+      setError('');
       // {"status": "paid", "item_ids": [4518]}
       const payload = {
         id: billItems.bill_id,
         body: {
-          status: "paid",
-          item_ids
-        }
-      }
-      const res = await updateBill(payload)
-      
-        setSuccess(
-          `${res.data.message}`,
-        );
-        setIsUpdateModalOpen(false);
-        setSelectedItems(new Set());
-        return res
+          status: 'paid',
+          item_ids,
+        },
+      };
+      const res = await updateBill(payload);
+
+      setSuccess(`${res.data.message}`);
+      setIsUpdateModalOpen(false);
+      setSelectedItems(new Set());
+      return res;
     } catch (err) {
-      const errMessage = err instanceof Error ? err.message : 'Unknown error'
+      const errMessage = err instanceof Error ? err.message : 'Unknown error';
       setError('Failed to update items: ' + errMessage);
-    }finally{
-      setIsProcessing(isUpdating)
+    } finally {
+      setIsProcessing(isUpdating);
     }
   };
 
@@ -155,11 +153,6 @@ const BillDetailApproval = () => {
     try {
       setIsProcessing(true);
 
-      // Replace with your actual API call
-      // await finalizeBill({ billId: bill.id }).unwrap();
-
-      // Mock implementation
-      console.log('Finalizing bill:', bill.id);
       setTimeout(() => {
         // setBill({ ...bill, status: 'finalized' });
         setSuccess('Bill has been finalized successfully!');
@@ -170,12 +163,6 @@ const BillDetailApproval = () => {
       setError('Failed to finalize bill. Please try again.');
       setIsProcessing(false);
     }
-  };
-
-  // Handle print
-  const handlePrint = () => {
-    // Create a print-friendly version
-    window.print();
   };
 
   // Table headers for bill items
@@ -204,7 +191,10 @@ const BillDetailApproval = () => {
           title='Bill not found'
           subtitle='The requested bill could not be found.'
         />
-        <Button onClick={() => navigate('/finance/bills')} renderIcon={ArrowLeft}>
+        <Button
+          onClick={() => navigate('/finance/bills')}
+          renderIcon={ArrowLeft}
+        >
           Back to Bills
         </Button>
       </div>
@@ -254,14 +244,14 @@ const BillDetailApproval = () => {
               Finalize Bill
             </Button>
           )}
-          <Button
+          {/* <Button
             kind='tertiary'
             renderIcon={Printer}
             onClick={handlePrint}
             className='bill-detail-header__print'
           >
             Print
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -283,7 +273,7 @@ const BillDetailApproval = () => {
             title='Success'
             subtitle={success}
             onClose={() => setSuccess('')}
-            // timeout={5000}
+          // timeout={5000}
           />
         </div>
       )}
@@ -381,24 +371,24 @@ const BillDetailApproval = () => {
                               {!billItems.bill_items.some(
                                 (item) => item.status == 'paid',
                               ) && (
-                                <Checkbox
-                                  id='select-all'
-                                  labelText=''
-                                  checked={
-                                    billItems.bill_items.length > 0 &&
-                                    selectedItems.size ===
+                                  <Checkbox
+                                    id='select-all'
+                                    labelText=''
+                                    checked={
+                                      billItems.bill_items.length > 0 &&
+                                      selectedItems.size ===
                                       billItems.bill_items.length
-                                  }
-                                  indeterminate={
-                                    selectedItems.size > 0 &&
-                                    selectedItems.size <
+                                    }
+                                    indeterminate={
+                                      selectedItems.size > 0 &&
+                                      selectedItems.size <
                                       billItems.bill_items.length
-                                  }
-                                  onChange={(e) =>
-                                    handleSelectAllChange(e.target.checked)
-                                  }
-                                />
-                              )}
+                                    }
+                                    onChange={(e) =>
+                                      handleSelectAllChange(e.target.checked)
+                                    }
+                                  />
+                                )}
                             </TableHeader>
                           );
                         }
@@ -525,7 +515,7 @@ const BillDetailApproval = () => {
         modalHeading='Update Selected Items'
         primaryButtonText={isProcessing ? 'Updating...' : 'Update Status'}
         secondaryButtonText='Cancel'
-        onRequestSubmit={ () => handleUpdateConfirm([...selectedItems])}
+        onRequestSubmit={() => handleUpdateConfirm([...selectedItems])}
         primaryButtonDisabled={isProcessing}
         danger={false}
         size='sm'

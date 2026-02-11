@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo } from "react";
 import {
   DataTable,
   TableContainer,
@@ -16,26 +16,26 @@ import {
   Pagination,
   Loading,
   InlineNotification,
-} from '@carbon/react';
-import { Add, Receipt } from '@carbon/icons-react';
-import './billing-list.scss';
-import { useGetAllBillsQuery } from '../../api/Bills';
-import { useNavigate } from 'react-router-dom';
+} from "@carbon/react";
+import { Add, Receipt } from "@carbon/icons-react";
+import "./billing-list.scss";
+import { useGetAllBillsQuery } from "../../api/Bills";
+import { useNavigate } from "react-router-dom";
 
 export interface Bill {
   id: string;
   patient_name: string;
   visit_id: string;
   total_amount: number;
-  status: 'paid' | 'pending' | 'cancelled';
+  status: "paid" | "pending" | "cancelled";
   created_at: string;
   updated_at: string;
 }
 
 const BillingList = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState("");
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
@@ -73,12 +73,12 @@ const BillingList = () => {
   const totalItems = filteredBills.length;
 
   // Status tag rendering
-  const getStatusTag = (status: Bill['status']) => {
+  const getStatusTag = (status: Bill["status"]) => {
     const statusConfig = {
-      paid: { type: 'green' as const, label: 'Paid' },
-      pending: { type: 'blue' as const, label: 'Pending' },
-      cancelled: { type: 'red' as const, label: 'Cancelled' },
-      partially_paid: { type: 'purple' as const, label: 'Partially paid' },
+      paid: { type: "green" as const, label: "Paid" },
+      pending: { type: "blue" as const, label: "Pending" },
+      cancelled: { type: "red" as const, label: "Cancelled" },
+      partially_paid: { type: "purple" as const, label: "Partially paid" },
     };
 
     const config = statusConfig[status];
@@ -87,56 +87,56 @@ const BillingList = () => {
 
   // Format currency
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'NGN',
-      currencyDisplay: 'code', // shows "NGN"
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "NGN",
+      currencyDisplay: "code", // shows "NGN"
     })
       .format(amount)
-      .replace('NGN', '₦'); // replace with HTML symbol
+      .replace("NGN", "₦"); // replace with HTML symbol
   };
 
   // Table headers
   const headers = [
-    { key: 'billId', header: 'Id' },
-    { key: 'patientName', header: 'Patient Name' },
-    { key: 'visitId', header: 'Visit ID' },
-    { key: 'total', header: 'Total' },
-    { key: 'status', header: 'Status' },
+    { key: "billId", header: "Id" },
+    { key: "patientName", header: "Patient Name" },
+    { key: "visitId", header: "Visit ID" },
+    { key: "total", header: "Total" },
+    { key: "status", header: "Status" },
   ];
 
   // Handle row click - navigate to bill details
   const handleRowClick = (bill: Bill) => {
     navigate(`/finance/bills/${bill.id}`, {
       state: {
-        bill: bill
-      }
+        bill: bill,
+      },
     });
   };
 
   if (billsQuery.isLoading) {
     return (
-      <div className=''>
+      <div className="">
         <h3>Loading...</h3>
       </div>
     );
   }
 
   return (
-    <div className='billing-list-container'>
-      <div className='billing-list-header'>
-        <div className='billing-list-header__content'>
-          <div className='billing-list-header__icon'>
+    <div className="billing-list-container">
+      <div className="billing-list-header">
+        <div className="billing-list-header__content">
+          <div className="billing-list-header__icon">
             <Receipt size={32} />
           </div>
-          <div className='billing-list-header__text'>
-            <h1 className='billing-list-header__title'>Billing List</h1>
-            <p className='billing-list-header__subtitle'>
+          <div className="billing-list-header__text">
+            <h1 className="billing-list-header__title">Billing List</h1>
+            <p className="billing-list-header__subtitle">
               View and manage patient bills, payments, and invoices
             </p>
           </div>
         </div>
-        <Button
+        {/* <Button
           renderIcon={Add}
           onClick={() => {
             // Add your navigation logic for creating new bill
@@ -145,16 +145,16 @@ const BillingList = () => {
           className='billing-list-header__action'
         >
           New Bill
-        </Button>
+        </Button> */}
       </div>
 
       {error && (
-        <div className='billing-list-notification'>
+        <div className="billing-list-notification">
           <InlineNotification
-            kind='error'
-            title='Error'
+            kind="error"
+            title="Error"
             subtitle={error}
-            onClose={() => setError('')}
+            onClose={() => setError("")}
           />
         </div>
       )}
@@ -267,7 +267,7 @@ const BillingList = () => {
         </div>
       </div> */}
 
-      <div className='billing-list-table-container'>
+      <div className="billing-list-table-container">
         <DataTable rows={paginatedBills} headers={headers}>
           {({
             rows,
@@ -279,20 +279,20 @@ const BillingList = () => {
           }) => (
             <TableContainer
               {...getTableContainerProps()}
-              className='billing-list-table-wrapper'
+              className="billing-list-table-wrapper"
             >
               <TableToolbar>
                 <TableToolbarContent>
                   <TableToolbarSearch
                     persistent
-                    placeholder='Search by patient identifier, name'
+                    placeholder="Search by patient identifier, name"
                     onChange={(e) => setSearchQuery(e.target.value)}
                     value={searchQuery}
                   />
                 </TableToolbarContent>
               </TableToolbar>
 
-              <Table {...getTableProps()} className='billing-list-table'>
+              <Table {...getTableProps()} className="billing-list-table">
                 <TableHead>
                   <TableRow>
                     {headers.map((header) => (
@@ -308,14 +308,16 @@ const BillingList = () => {
                 <TableBody>
                   {rows.length > 0 ? (
                     rows.map((row) => {
-                      const bill = paginatedBills.find((b: any) => b.id === row.id);
+                      const bill = paginatedBills.find(
+                        (b: any) => b.id === row.id,
+                      );
                       // console.log(bill)
                       return (
                         <TableRow
                           {...getRowProps({ row })}
                           key={row.id}
                           onClick={() => handleRowClick(bill)}
-                          className='billing-list-table__row'
+                          className="billing-list-table__row"
                         >
                           <TableCell>{bill?.id}</TableCell>
                           <TableCell>{bill?.patient_name}</TableCell>
@@ -326,7 +328,7 @@ const BillingList = () => {
                           </TableCell> */}
                           <TableCell>{bill?.visit_id}</TableCell>
                           <TableCell>
-                            <span className='billing-list-table__amount'>
+                            <span className="billing-list-table__amount">
                               {bill && formatCurrency(bill.total_amount)}
                             </span>
                           </TableCell>
@@ -339,12 +341,12 @@ const BillingList = () => {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={headers.length}>
-                        <div className='billing-list-empty'>
+                        <div className="billing-list-empty">
                           <Receipt size={48} />
-                          <p className='billing-list-empty__text'>
+                          <p className="billing-list-empty__text">
                             {searchQuery
-                              ? 'No bills found matching your search'
-                              : 'No bills available'}
+                              ? "No bills found matching your search"
+                              : "No bills available"}
                           </p>
                         </div>
                       </TableCell>
@@ -357,7 +359,7 @@ const BillingList = () => {
         </DataTable>
 
         {filteredBills.length > 0 && (
-          <div className='billing-list-pagination'>
+          <div className="billing-list-pagination">
             <Pagination
               page={currentPage}
               pageSize={pageSize}

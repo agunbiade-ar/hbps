@@ -1,7 +1,7 @@
 // Import healthcare color palette from login
-$healthcare-primary: #0f62fe;
-$healthcare-primary-light: #4589ff;
-$healthcare-primary-lighter: #d0e2ff;
+$healthcare-primary: #086b56;
+$healthcare-primary-light: #0f9370;
+$healthcare-primary-lighter: #d4ede7;
 $healthcare-secondary: #24a148;
 $healthcare-secondary-light: #6fdc8c;
 $healthcare-accent: #42be65;
@@ -16,14 +16,14 @@ $healthcare-white: #ffffff;
 
 // Additional status colors
 $status-paid: #24a148;
-$status-pending: #0f62fe;
+$status-pending: #086b56;
 $status-overdue: #da1e28;
 $status-partial: #8a3ffc;
 
 // Shadows
-$shadow-soft: 0 2px 8px rgba(15, 98, 254, 0.08);
-$shadow-medium: 0 4px 16px rgba(15, 98, 254, 0.12);
-$shadow-large: 0 8px 32px rgba(15, 98, 254, 0.16);
+$shadow-soft: 0 2px 8px rgba(8, 107, 86, 0.08);
+$shadow-medium: 0 4px 16px rgba(8, 107, 86, 0.12);
+$shadow-large: 0 8px 32px rgba(8, 107, 86, 0.16);
 
 // Animation
 $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -31,7 +31,7 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 // Main container
 .billing-list-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 50%, #f5fdf7 100%);
+  background: linear-gradient(135deg, #ecf5f2 0%, #e4ede8 50%, #f0f5f3 100%);
   padding: 2rem;
   animation: fadeIn 0.5s $ease-smooth;
 
@@ -72,7 +72,11 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   &__icon {
     width: 64px;
     height: 64px;
-    background: linear-gradient(135deg, $healthcare-primary 0%, $healthcare-primary-light 100%);
+    background: linear-gradient(
+      135deg,
+      $healthcare-primary 0%,
+      $healthcare-primary-light 100%
+    );
     border-radius: 16px;
     display: flex;
     align-items: center;
@@ -98,7 +102,12 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     color: $healthcare-neutral-900;
     margin-bottom: 0.5rem;
     letter-spacing: -0.02em;
-    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family:
+      'IBM Plex Sans',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
 
     @media (max-width: 768px) {
       font-size: 1.5rem;
@@ -116,7 +125,11 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 
     :global(.cds--btn) {
       border-radius: 8px;
-      background: linear-gradient(135deg, $healthcare-secondary 0%, $healthcare-secondary-light 100%);
+      background: linear-gradient(
+        135deg,
+        $healthcare-secondary 0%,
+        $healthcare-secondary-light 100%
+      );
       border: none;
       padding: 0.875rem 1.5rem;
       font-weight: 500;
@@ -124,7 +137,11 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
       transition: all 0.3s $ease-smooth;
 
       &:hover {
-        background: linear-gradient(135deg, darken($healthcare-secondary, 5%) 0%, $healthcare-secondary 100%);
+        background: linear-gradient(
+          135deg,
+          darken($healthcare-secondary, 5%) 0%,
+          $healthcare-secondary 100%
+        );
         box-shadow: $shadow-medium;
         transform: translateY(-2px);
       }

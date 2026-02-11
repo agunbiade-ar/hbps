@@ -7,8 +7,20 @@ export const payments_api = createApi({
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     getAllPayments: builder.query({
-      query: ({ receipt_number, offset, limit }) =>
-        `/payments/payments?offset=${offset ?? 0}&receipt_number=${receipt_number ?? ''}&limit=${limit ?? 100}`,
+      query: (args) => {
+        const params: Record<string, any> = {};
+        if (args.receipt_number) params['receipt_number'] = args.receipt_number;
+        if (args.start_date) params.start_date = args.start_date;
+        if (args.end_date) params.end_date = args.end_date;
+
+        params.today = args.today;
+        params.limit = args.limit;
+        params.offset = args.offset;
+        return {
+          url: '/payments/payments',
+          params,
+        };
+      },
       transformResponse: (response) => response,
     }),
     getPayment: builder.query({

@@ -16,11 +16,11 @@ export type User = {
 };
 
 export const navItems = [
-  {
-    label: 'Dashboard',
-    link: '/dashboard',
-    icon: <Home />,
-  },
+  // {
+  //   label: 'Dashboard',
+  //   link: '/dashboard',
+  //   icon: <Home />,
+  // },
   {
     label: 'Finance',
     link: '/finance',
