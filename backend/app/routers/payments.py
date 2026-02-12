@@ -24,7 +24,13 @@ async def get_all_payments(
 ):
     try:
         async with connection.cursor() as cursor:
-            query = """SELECT * FROM hayokbps.payments WHERE 1 = 1 """
+            query = """SELECT p.id, p.bill_id, p.amount, p.receipt_number, p.created_at, bi.item_type, bi.payment_id AS bill_item_payment_id, bi.description, bi.unit_price, bi.quantity, bi.total_price, 
+            b.patient_name, b.patient_id, CONCAT_WS(' ', u.first_name, u.last_name) AS cashier_name 
+            FROM hayokbps.payments p 
+            LEFT JOIN hayokbps.bill b ON b.id = p.bill_id 
+            JOIN hayokbps.users u ON u.id = p.cashier_id
+            JOIN hayokbps.bill_items bi ON bi.payment_id = p.id
+            WHERE 1 = 1 """
 
             params = []
             if receipt_number:
@@ -33,25 +39,53 @@ async def get_all_payments(
             if today:
                 start_date_ = datetime.combine(date.today(), time.min)
                 end_date_ = datetime.combine(date.today(), time.max)
-                query += " AND created_at >= %s AND created_at <= %s"
+                query += " AND p.created_at >= %s AND p.created_at <= %s"
+                params.extend([start_date_, end_date_])
             elif start_date or end_date:
                 if start_date:
                     start_date_ = datetime.combine(start_date, time=time.min)
-                    query += " AND created_at >= %s"
+                    query += " AND p.created_at >= %s"
+                    params.append(start_date_)
 
                 if end_date:
                     end_date_ = datetime.combine(end_date, time=time.min)
-                    query += " AND created_at <= %s"
+                    query += " AND p.created_at <= %s"
+                    params.append(end_date_)
 
-                params.extend([start_date_, end_date_])
-
-            query += " ORDER BY created_at DESC LIMIT %s OFFSET %s"
+            query += " ORDER BY p.created_at DESC LIMIT %s OFFSET %s"
             params.extend([limit, offset])
             await cursor.execute(query, tuple(params))
             payments = await cursor.fetchall()
 
-            total = sum([payment.get("amount") for payment in payments])
-            return {"payments": payments, "total": total}
+            all_payments = {}
+            for row in payments:
+                payment_id = row.get("id")
+
+                if payment_id not in all_payments:
+                    all_payments[payment_id] = {
+                        "id": row.get("id"),
+                        "bill_id": row.get("bill_id"),
+                        "amount": row.get("amount"),
+                        "receipt_number": row.get("receipt_number"),
+                        "patient_name": row.get("patient_name"),
+                        "cashier_name": row.get("cashier_name"),
+                        "bill_items": [],
+                        "created_at": row.get("created_at"),
+                    }
+
+                if row.get("bill_item_payment_id"):
+                    all_payments[payment_id]["bill_items"].append(
+                        {
+                            "description": row.get("description"),
+                            "unit_price": row.get("unit_price"),
+                            "quantity": row.get("quantity"),
+                            "category": row.get("item_type"),
+                        }
+                    )
+            all_payments = list(all_payments.values())
+
+            total = sum([payment.get("amount", 0) for payment in all_payments])
+            return {"payments": all_payments, "total": total}
     except aiomysqlError as e:
         logger.error(f"Database error when fetching payments: {e}")
         raise HTTPException(

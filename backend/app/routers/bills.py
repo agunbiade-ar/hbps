@@ -185,7 +185,15 @@ async def update_bill(
             ]
 
             await cursor.execute(create_payment_query, tuple(payment_params))
+            payment_id = cursor.lastrowid
 
+            format_strings = ",".join(["%s"] * len(paid_bill_items["ids"]))
+
+            update_bill_items_query = f"""UPDATE hayokbps.bill_items SET payment_id = %s WHERE id IN ({format_strings})"""
+
+            await cursor.execute(
+                update_bill_items_query, tuple([payment_id] + paid_bill_items["ids"])
+            )
             # Fetch the updated bill
             query = """
             SELECT b.*, 
