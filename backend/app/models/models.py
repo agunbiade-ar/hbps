@@ -31,3 +31,27 @@ class TokenData(SQLModel):
 class BillUpdateRequest(BaseModel):
     item_ids: List[int]
     status: str
+
+
+class OrderItem(BaseModel):
+    concept_name: str
+    concept_id: int
+    category: str
+    quantity: int
+    order_id: int
+
+
+class OrderPayload(BaseModel):
+    id: int
+    patient_id: int
+    payer_id: int
+    patient_name: str
+    items: List[OrderItem]
+
+
+class Facility(BaseModel):
+    id: int
+    facility_name: str
+    facility_uuid: str
+    state: str
+    phone_no: str

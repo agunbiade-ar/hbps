@@ -126,8 +126,8 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 8px;
       background: linear-gradient(
         135deg,
-        $healthcare-secondary 0%,
-        $healthcare-secondary-light 100%
+        $healthcare-primary 0%,
+        $healthcare-primary-light 100%
       );
       border: none;
       padding: 0.875rem 1.5rem;
@@ -138,8 +138,8 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
       &:hover {
         background: linear-gradient(
           135deg,
-          darken($healthcare-secondary, 5%) 0%,
-          $healthcare-secondary 100%
+          darken($healthcare-primary, 5%) 0%,
+          $healthcare-primary 100%
         );
         box-shadow: $shadow-medium;
         transform: translateY(-2px);
@@ -509,8 +509,8 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 8px;
       background: linear-gradient(
         135deg,
-        $healthcare-secondary 0%,
-        $healthcare-secondary-light 100%
+        $healthcare-primary 0%,
+        $healthcare-primary-light 100%
       );
       border: none;
       transition: all 0.3s $ease-smooth;
@@ -518,8 +518,8 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
       &:hover {
         background: linear-gradient(
           135deg,
-          darken($healthcare-secondary, 5%) 0%,
-          $healthcare-secondary 100%
+          darken($healthcare-primary, 5%) 0%,
+          $healthcare-primary 100%
         );
         box-shadow: $shadow-soft;
       }

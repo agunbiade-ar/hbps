@@ -1,19 +1,17 @@
-import {Navigate, useLocation} from 'react-router-dom';
+// components/ProtectedRoute.tsx
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAppSelector } from '../redux/store';
-import type { ReactNode } from 'react';
 
-export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-  const location = useLocation();
-  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
+function ProtectedRoute() {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
-  // Still checking auth → render nothing (or spinner)
-  if (loading) {
-    return null; // or <Spinner />
-  }
-
+  // If not authenticated, redirect to login
   if (!isAuthenticated) {
-    return <Navigate to='/login' state={{ from: location}} replace />;
+    return <Navigate to='/login' replace />;
   }
 
-  return <>{children}</>;
-};
+  // If authenticated, render child routes
+  return <Outlet />;
+}
+
+export default ProtectedRoute;

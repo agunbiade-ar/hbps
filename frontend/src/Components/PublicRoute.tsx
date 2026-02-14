@@ -1,8 +1,12 @@
-import { type JSX } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAppSelector } from '../redux/store.ts';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAppSelector } from '../redux/store';
 
-export const PublicRoute = ({ children }: { children: JSX.Element }) => {
+export function PublicRoute() {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  return isAuthenticated ? <Navigate to='/dashboard' replace /> : children;
-};
+
+  if (isAuthenticated) {
+    return <Navigate to='/finance/bills' replace />;
+  }
+
+  return <Outlet />;
+}

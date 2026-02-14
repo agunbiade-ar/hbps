@@ -49,26 +49,20 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
+def create_refresh_token(data: dict):
     payload_to_encode = data.copy()
 
-    if expires_delta:
-        expiry = datetime.now(timezone.utc) + expires_delta
-    else:
-        expiry = datetime.now(timezone.utc) + timedelta(
-            days=settings.REFRESH_TOKEN_EXPIRY_LENGTH
-        )
+    expiry = datetime.now(timezone.utc) + timedelta(
+        days=settings.REFRESH_TOKEN_EXPIRY_LENGTH
+    )
 
     payload_to_encode.update(
         {"exp": expiry, "type": "refresh", "jti": str(uuid.uuid4())}
     )
-    return (
-        jwt.encode(
-            payload=payload_to_encode,
-            key=settings.SECRET_KEY,
-            algorithm=settings.ALGORITHM,
-        ),
-        expiry,
+    return jwt.encode(
+        payload=payload_to_encode,
+        key=settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
     )
 
 
@@ -122,9 +116,21 @@ async def get_current_user(
 async def get_openmrs_user(openmrs_user_uuid: str):
     client = OpenMRSClient.get_client()
     response = await client.get(
-        f"{settings.BASE_URL}/user/{openmrs_user_uuid}",
-        auth=(settings.OPENMRS_USER, settings.OPENMRS_PASSWORD),
+        f"{settings.OPENMRS_BASE_URL}/user/{openmrs_user_uuid}",
+        auth=(settings.OPENMRS_USER, settings.OPENMRS_USER_PASSWORD),
         headers={"Accept": "application/json"},
     )
     openmrs_user = response.json()
     return openmrs_user
+
+
+async def get_openmrs_users(limit: int = 20, startIndex: int = 0):
+    client = OpenMRSClient.get_client()
+    response = await client.get(
+        f"{settings.OPENMRS_BASE_URL}/user",
+        params={"limit": limit, "startIndex": startIndex},
+        auth=(settings.OPENMRS_USER, settings.OPENMRS_USER_PASSWORD),
+        headers={"Accept": "application/json"},
+    )
+    openmrs_users = response.json()
+    return openmrs_users

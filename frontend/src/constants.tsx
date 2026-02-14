@@ -3,6 +3,7 @@ import {
   Receipt,
   //   InventoryManagement,
   //   Medication,
+    IbmWatsonOrders,
   UserFollow,
   Logout,
 } from '@carbon/icons-react';
@@ -34,13 +35,17 @@ export const navItems = [
         name: 'Payments',
         link: '/payments',
       },
+      {
+        name: 'Price Management',
+        link: '/price-management',
+      },
     ],
   },
-  // {
-  //     "label": "Stock",
-  //     "link": "/stock-management",
-  //     "icon": <InventoryManagement />
-  // },
+  {
+      "label": "Orders",
+      "link": "/orders",
+      "icon": <IbmWatsonOrders />
+  },
   // {
   //     "label": "Pharmacy",
   //     "link": "/pharmacy",
@@ -48,7 +53,7 @@ export const navItems = [
   // },
   {
     label: 'Register User',
-    link: '/register',
+    link: '/register-user',
     icon: <UserFollow />,
   },
   // {

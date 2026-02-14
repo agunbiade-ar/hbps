@@ -33,6 +33,44 @@ def get_concepts_from_openmrsDB(source_db, target_db):
     return concepts
 
 
+def generate_default_item_prices(item_concept_ids, target_cursor):
+    """
+    Creates default price = 0 for each item.
+    Assumes facility_id=1 and payer_id=1 as default.
+    """
+
+    if not item_concept_ids:
+        return
+
+    # Step 1: Fetch item IDs from items table
+    format_strings = ",".join(["%s"] * len(item_concept_ids))
+    select_query = f"""
+        SELECT id FROM hayokbps.items
+        WHERE concept_id IN ({format_strings})
+    """
+
+    target_cursor.execute(select_query, tuple(item_concept_ids))
+    items = target_cursor.fetchall()
+
+    if not items:
+        return
+
+    # Step 2: Prepare default price rows
+    price_data = [
+        (item["id"], 1, 1, 0.00)  # item_id, facility_id, payer_id, price
+        for item in items
+    ]
+
+    insert_price_query = """
+        INSERT INTO hayokbps.item_prices
+        (item_id, facility_id, payer_id, price)
+        VALUES (%s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE price = price
+    """
+
+    target_cursor.executemany(insert_price_query, price_data)
+
+
 def transport_concepts_from_openmrsDB(source_db, target_db):
     concepts = get_concepts_from_openmrsDB(source_db=source_db, target_db=target_db)
 
@@ -62,8 +100,30 @@ def transport_concepts_from_openmrsDB(source_db, target_db):
     try:
         # Batch insert
         cursor.executemany(insert_query, data)
-        last_processed_id = data[len(data) - 1][0]
-        update_last_processed_concept_id(target_db=target_db, last_id=last_processed_id)
+
+        default_price_query = """
+            INSERT INTO hayokbps.item_prices (item_id, facility_id, payer_id, price)
+            SELECT 
+                i.id,
+                1,
+                1,
+                0.00
+            FROM hayokbps.items i
+            LEFT JOIN hayokbps.item_prices ip
+                ON ip.item_id = i.id
+                AND ip.facility_id = 1
+                AND ip.payer_id = 1
+            WHERE ip.id IS NULL;
+            """
+
+        cursor.execute(default_price_query)
+
+        if data:
+            last_processed_id = data[-1][0]
+            update_last_processed_concept_id(
+                target_db=target_db, last_id=last_processed_id
+            )
+
         target_db.commit()
     except Exception as e:
         target_db.rollback()

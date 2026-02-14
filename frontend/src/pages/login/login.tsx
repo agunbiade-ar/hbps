@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Form,
   TextInput,
@@ -7,39 +7,38 @@ import {
   InlineNotification,
 } from '@carbon/react';
 import './login.scss';
-import { FetchMe, SignIn } from '../../redux/features/slices/authSlice.ts';
-import { useAppDispatch } from '../../redux/store.ts';
+import { clearError, SignIn } from '../../redux/features/slices/authSlice.ts';
+import { useAppDispatch, useAppSelector } from '../../redux/store.ts';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const dispatch = useAppDispatch();
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
   const navigate = useNavigate();
+
+  const { loading, error } = useAppSelector((state) => state.auth);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
 
     if (!userName || !password) {
-      setError('Username and password are required.');
-      setLoading(false);
       return;
     }
 
+    setIsLoading(true);
     const payload = { username: userName, password: password };
     try {
       await dispatch(SignIn(payload)).unwrap();
-      await dispatch(FetchMe());
-      navigate('/dashboard');
+      navigate('/orders', {
+        replace: true,
+      });
     } catch (error: any) {
-      console.log(error)
-      setError(error);
+      console.log(error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
   return (
@@ -179,13 +178,13 @@ const Login = () => {
             <div className='login-form__actions'>
               <Button
                 type='submit'
-                disabled={loading}
+                disabled={isLoading}
                 className='login-form__button'
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? 'Signing in...' : 'Sign in'}
               </Button>
 
-              {loading && (
+              {isLoading && (
                 <div className='login-form__loading'>
                   <InlineLoading description='Authenticating...' />
                 </div>

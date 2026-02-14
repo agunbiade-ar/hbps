@@ -1,7 +1,9 @@
 CREATE TABLE hayokbps.bill (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    visit_id VARCHAR(100) NOT NULL UNIQUE,  -- One bill per visit
-        
+    patient_id INT NOT NULL,
+    payer_id INT NOT NULL DEFAULT 1,
+
+    billing_visit_id INT NOT NULL,        
     total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,  -- Sum of all items
     paid_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,   -- Sum of all payments
     balance DECIMAL(10, 2) NOT NULL DEFAULT 0,       -- total - paid
@@ -9,19 +11,25 @@ CREATE TABLE hayokbps.bill (
     status ENUM('pending', 'paid', 'cancelled', 'partially_paid') NOT NULL DEFAULT 'pending',
     
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    INDEX idx_openmrs_visit_id (visit_id),
+    FOREIGN KEY (payer_id) REFERENCES hayokbps.payer_type(id) ON DELETE RESTRICT,
+
+    FOREIGN KEY (billing_visit_id) REFERENCES hayokbps.billing_visits(id) ON DELETE RESTRICT,
+
+    FOREIGN KEY (patient_id) REFERENCES hayokbps.billing_patients(patient_id) ON DELETE RESTRICT,
+    
     INDEX idx_patient_id (patient_id),
     INDEX idx_status (status)
 );
+
 
 CREATE TABLE hayokbps.bill_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     bill_id INT NOT NULL,
     order_id VARCHAR(100) NOT NULL,  -- Links back to OpenMRS
     
-    encounter_id VARCHAR(100),  -- Optional but useful
+    -- encounter_id VARCHAR(100),  -- Optional but useful
     
     -- Item details
     description VARCHAR(255) NOT NULL,  -- Drug name, test name, etc.
@@ -110,7 +118,6 @@ CREATE TABLE hayokbps.user_refresh_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL UNIQUE,
     refresh_token VARCHAR(512) NOT NULL,
-    expires_at DATETIME NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES hayokbps.users(id) ON DELETE CASCADE
 );
@@ -118,12 +125,16 @@ CREATE TABLE hayokbps.user_refresh_tokens (
 CREATE TABLE hayokbps.payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     bill_id INT NOT NULL,
+    patient_id INT NOT NULL,
+    facility_id INT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     receipt_number VARCHAR(50) NOT NULL UNIQUE,
-    paid_items_ids JSON,
     cashier_id INT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 
     
+    FOREIGN KEY (facility_id) REFERENCES hayokbps.facility(id) ON DELETE RESTRICT, 
+
+    FOREIGN KEY (patient_id) REFERENCES hayokbps.billing_patients(patient_id) ON DELETE RESTRICT
      FOREIGN KEY (bill_id) REFERENCES hayokbps.bill(id) ON DELETE CASCADE,
      FOREIGN KEY (cashier_id) REFERENCES hayokbps.users(id),
      
@@ -135,7 +146,9 @@ CREATE TABLE hayokbps.payments (
 CREATE TABLE hayokbps.facility(
 	id INT auto_increment PRIMARY KEY,
     facility_name VARCHAR (255) NOT NULL,
-    facility_uuid CHAR(36) DEFAULT (UUID())
+    facility_uuid CHAR(36) DEFAULT (UUID()),
+    state VARCHAR (255) NOT NULL,
+    phone_no VARCHAR (100) NOT NULL
 );
 
 CREATE TABLE hayokbps.items (
@@ -154,7 +167,7 @@ CREATE TABLE hayokbps.billing_patients (
     patient_id INT NOT NULL UNIQUE,
     patient_name VARCHAR (255) NOT NULL,
     facility_id INT NOT NULL DEFAULT 1,
-    current_payer_type VARCHAR(50) NOT NULL DEFAULT 'cash',
+    current_payer_type VARCHAR(50) NOT NULL DEFAULT 'self',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (facility_id) REFERENCES hayokbps.facility(id) 
@@ -174,19 +187,37 @@ CREATE TABLE hayokbps.item_prices (
     price DECIMAL(10,2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE (facility_id, item_id, payer_type),
+    UNIQUE (facility_id, item_id, payer_id),
     FOREIGN KEY (item_id) REFERENCES hayokbps.items(id),
     FOREIGN KEY (facility_id) REFERENCES hayokbps.facility(id)
 );
 
 CREATE TABLE hayokbps.orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT NOT NULL,
+    billing_visit_id INT NOT NULL,
+    order_id INT NOT NULL UNIQUE,
+    -- encounter_id INT NOT NULL,
     patient_id INT NOT NULL,
     concept_id INT NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
-    status ENUM('pending', 'dispensed', 'cancelled', 'billed') 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+
+    FOREIGN KEY (billing_visit_id) REFERENCES hayokbps.billing_visits(id)
 );
+
+CREATE TABLE billing_visits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    visit_id INT NOT NULL,          -- from OpenMRS
+    patient_id INT NOT NULL,
+    -- encounter_id INT NOT NULL,
+    status ENUM ('open', 'billed', 'partially_paid', 'paid', 'cancelled'),
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    UNIQUE KEY unique_visit (visit_id)
+);
+
 
 -- INSERT INTO hayokbps.facility (facility_name) 
 -- VALUES ('Home Hospital');

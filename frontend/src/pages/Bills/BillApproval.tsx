@@ -54,14 +54,12 @@ const BillDetailApproval = () => {
 
   const billQuery = useGetBillQuery({ id: bill?.id });
   const [updateBill, { isLoading: isUpdating }] = useUpdateBillMutation();
-  console.log(billQuery);
 
   const billItems: BillWithItems = useMemo(() => {
     const billsData = billQuery.data || [];
     return billsData;
   }, [billQuery.data]);
 
-  console.log(billItems);
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -273,7 +271,7 @@ const BillDetailApproval = () => {
             title='Success'
             subtitle={success}
             onClose={() => setSuccess('')}
-          // timeout={5000}
+            // timeout={5000}
           />
         </div>
       )}
@@ -310,12 +308,12 @@ const BillDetailApproval = () => {
               </div>
             )}
 
-            <div className='bill-detail-info-item'>
+            {/* <div className='bill-detail-info-item'>
               <span className='bill-detail-info-item__label'>Visit ID</span>
               <span className='bill-detail-info-item__value'>
                 {bill.visit_id}
               </span>
-            </div>
+            </div> */}
 
             <div className='bill-detail-info-item'>
               <span className='bill-detail-info-item__label'>Created On</span>
@@ -371,24 +369,24 @@ const BillDetailApproval = () => {
                               {!billItems.bill_items.some(
                                 (item) => item.status == 'paid',
                               ) && (
-                                  <Checkbox
-                                    id='select-all'
-                                    labelText=''
-                                    checked={
-                                      billItems.bill_items.length > 0 &&
-                                      selectedItems.size ===
+                                <Checkbox
+                                  id='select-all'
+                                  labelText=''
+                                  checked={
+                                    billItems.bill_items.length > 0 &&
+                                    selectedItems.size ===
                                       billItems.bill_items.length
-                                    }
-                                    indeterminate={
-                                      selectedItems.size > 0 &&
-                                      selectedItems.size <
+                                  }
+                                  indeterminate={
+                                    selectedItems.size > 0 &&
+                                    selectedItems.size <
                                       billItems.bill_items.length
-                                    }
-                                    onChange={(e) =>
-                                      handleSelectAllChange(e.target.checked)
-                                    }
-                                  />
-                                )}
+                                  }
+                                  onChange={(e) =>
+                                    handleSelectAllChange(e.target.checked)
+                                  }
+                                />
+                              )}
                             </TableHeader>
                           );
                         }

@@ -1,6 +1,6 @@
 import aiomysql
 from typing import AsyncGenerator
-from contextlib import asynccontextmanager
+
 from config import settings
 
 

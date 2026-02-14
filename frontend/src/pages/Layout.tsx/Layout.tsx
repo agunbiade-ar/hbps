@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import { Header, HeaderName, HeaderMenuButton } from '@carbon/react';
+import { Header, HeaderName, HeaderMenuButton, Button } from '@carbon/react';
 // import { Logout } from '@carbon/icons-react';
 // import Button from '@carbon/react';
 import './Layout.scss';
 import { navItems } from '../../constants.tsx';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Logout } from '@carbon/icons-react';
+
+import {
+  Logout as logout,
+  reset,
+} from '../../redux/features/slices/authSlice.ts';
+import { useAppDispatch, useAppSelector } from '../../redux/store.ts';
 
 interface LayoutProps {
   title?: string;
@@ -71,7 +78,21 @@ const Sidebar = () => {
 };
 const Layout: React.FC<LayoutProps> = ({ title = '', children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const user = useAppSelector((state) => state.auth.user);
+  const dispatch = useAppDispatch();
 
+  const handleLogout = async () => {
+    try {
+      await dispatch(logout()).unwrap();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if logout fails, clear local state
+      dispatch(reset());
+      navigate('/login', { replace: true });
+    }
+  };
   return (
     <div className='omrs-layout'>
       <Header aria-label={title} className='omrs-header'>
@@ -82,16 +103,20 @@ const Layout: React.FC<LayoutProps> = ({ title = '', children }) => {
         <HeaderName href='' prefix='HBPS'>
           {title}
         </HeaderName>
-        {/* <Button
+
+        <div className='omrs-header__user'>
+          <span className='omrs-header__user-name'>{user?.username}</span>
+        </div>
+
+        <Button
+          hasIconOnly
           renderIcon={Logout}
-          onClick={() => {
-            console.log('');
-          }}
+          tooltipPosition='bottom'
+          iconDescription='Logout'
+          onClick={handleLogout}
+          kind='ghost'
           className='omrs-header__logout'
-          aria-label='Logout'
-        >
-          New Bill
-        </Button> */}
+        />
       </Header>
 
       <div className={`omrs-shell ${collapsed ? 'collapsed' : ''}`}>

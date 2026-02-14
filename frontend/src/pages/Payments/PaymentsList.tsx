@@ -21,6 +21,7 @@ import {
 import { Wallet, Printer } from '@carbon/icons-react';
 import './payments-list.scss';
 import { useGetAllPaymentsQuery } from '../../api/Payments';
+import { useGetFacilityQuery } from '../../api/Facility';
 import { format } from 'date-fns';
 
 export interface BillItem {
@@ -55,6 +56,8 @@ const PaymentsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
 
+  const facilityQuery = useGetFacilityQuery({});
+  console.log(facilityQuery);
   const paymentsQuery = useGetAllPaymentsQuery(
     {
       offset: pageSize * (currentPage - 1),
@@ -319,10 +322,9 @@ const PaymentsList = () => {
       <body>
         <div class="receipt">
           <div class="receipt-header">
-            <h1>HOSPITAL NAME</h1>
-            <p>Address Line 1</p>
-            <p>City, State, ZIP</p>
-            <p>Phone: (123) 456-7890</p>
+            <h1>${facilityQuery.data?.facility_name}</h1>
+            <p>${facilityQuery.data?.state}</p>
+            <p>${facilityQuery.data?.phone_no}</p>
           </div>
 
           <div class="receipt-title">PAYMENT RECEIPT</div>
@@ -560,7 +562,7 @@ const PaymentsList = () => {
                       const payment = paginatedPayments.find(
                         (p: any) => p.id === row.id,
                       );
-                      console.log(payment);
+                      // console.log(payment);
                       return (
                         <TableRow
                           {...getRowProps({ row })}

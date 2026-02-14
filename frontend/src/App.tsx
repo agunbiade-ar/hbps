@@ -1,77 +1,94 @@
-import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
+import {
+  Routes,
+  Route,
+  Outlet,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import Layout from './pages/Layout.tsx/Layout.tsx';
-import Dashboard from './pages/dashboard/Dashboard';
 import { PublicRoute } from './Components/PublicRoute.tsx';
-import { ProtectedRoute } from './Components/ProtectedRoute.tsx';
+import ProtectedRoute from './Components/ProtectedRoute.tsx';
 import Login from './pages/login/login.tsx';
 import { useAppDispatch, useAppSelector } from './redux/store.ts';
-import { FetchMe } from './redux/features/slices/authSlice.ts';
+import { clearError, FetchMe } from './redux/features/slices/authSlice.ts';
 import BillDetailApproval from './pages/Bills/BillApproval.tsx';
 import BillingList from './pages/Bills/BillingList.tsx';
-import { useEffect } from 'react';
 import { FinanceLayout } from './pages/Layout.tsx/Finance.tsx';
-import { useNavigate } from 'react-router-dom';
 import PaymentsList from './pages/Payments/PaymentsList.tsx';
+import { RegisterUser } from './pages/Users/RegisterUser.tsx';
+import { PriceListManagement } from './pages/Pricing/PriceList.tsx';
+import { OrdersManagement } from './pages/Orders/orders-management.tsx';
 
 function App() {
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
 
+  const hasCheckedAuth = useRef(false);
+
+  // Only check auth ONCE on initial app load
   useEffect(() => {
-    dispatch(FetchMe());
+    const fetchme = async () => {
+      try {
+        await dispatch(FetchMe()).unwrap();
+      } catch (error) {
+        console.log(error);
+        dispatch(clearError());
+      }
+    };
+    if (!hasCheckedAuth.current) {
+      hasCheckedAuth.current = true;
+      console.log('Checking initial auth status');
+      fetchme();
+    }
   }, [dispatch]);
 
   useEffect(() => {
-    //we are redirecting because the user is not logged in, the fetchme
-    //endpoint returned a 401 status code
-
-    if (!loading && !isAuthenticated) {
-      navigate('/login');
+    // Only allow /login when not authenticated
+    if (!loading && !isAuthenticated && location.pathname !== '/login') {
+      navigate('/login', { replace: true });
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [location.pathname, isAuthenticated, loading, navigate]);
 
   return (
-    <>
-      <Routes>
-        <Route
-          path='/login'
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
+    <Routes>
+      {/* Public routes */}
+      <Route element={<PublicRoute />}>
+        <Route path='/login' element={<Login />} />
+      </Route>
 
-        <Route
-          path='/'
-          element={
-            <Navigate
-              to={isAuthenticated ? '/finance/bills' : '/login'}
-              replace
-            />
-          }
-        />
+      {/* Root redirect */}
+      <Route path='/' element={<Navigate to='/finance/bills' replace />} />
 
+      {/* Protected routes with Layout */}
+      <Route element={<ProtectedRoute />}>
         <Route
           element={
-            <ProtectedRoute>
-              <Layout>
-                {/* Nested routes will be rendered here */}
-                <Outlet />
-              </Layout>
-            </ProtectedRoute>
+            <Layout>
+              <Outlet />
+            </Layout>
           }
         >
-          {/* <Route path='/dashboard' element={<Dashboard />} /> */}
+          <Route path='/register-user' element={<RegisterUser />} />
+          <Route path='/orders' element={<OrdersManagement />} />
+
+          {/* Finance routes */}
           <Route path='/finance' element={<FinanceLayout />}>
-            <Route path='/finance/bills' element={<BillingList />} />
-            <Route path='/finance/bills/:id' element={<BillDetailApproval />} />
-            <Route path='/finance/payments' element={<PaymentsList />} />
+            <Route path='bills' element={<BillingList />} />
+            <Route path='bills/:id' element={<BillDetailApproval />} />
+            <Route path='payments' element={<PaymentsList />} />
+            <Route path='price-management' element={<PriceListManagement />} />
           </Route>
         </Route>
-      </Routes>
-    </>
+      </Route>
+
+      {/* Catch-all - redirect to login */}
+      <Route path='*' element={<Navigate to='/login' replace />} />
+    </Routes>
   );
 }
 
