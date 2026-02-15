@@ -1,0 +1,562 @@
+// Import healthcare color palette
+$healthcare-primary: #086b56;
+$healthcare-primary-light: #0f9370;
+$healthcare-primary-lighter: #d4ede7;
+$healthcare-secondary: #24a148;
+$healthcare-secondary-light: #6fdc8c;
+$healthcare-accent: #42be65;
+$healthcare-warning: #f1c21b;
+$healthcare-error: #da1e28;
+$healthcare-info: #0f62fe;
+$healthcare-neutral-100: #f4f4f4;
+$healthcare-neutral-200: #e0e0e0;
+$healthcare-neutral-300: #c6c6c6;
+$healthcare-neutral-700: #525252;
+$healthcare-neutral-900: #161616;
+$healthcare-white: #ffffff;
+
+// Shadows
+$shadow-soft: 0 2px 8px rgba(8, 107, 86, 0.08);
+$shadow-medium: 0 4px 16px rgba(8, 107, 86, 0.12);
+$shadow-large: 0 8px 32px rgba(8, 107, 86, 0.16);
+
+// Animation
+$ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+// Main container
+.order-items-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #ecf5f2 0%, #e4ede8 50%, #f0f5f3 100%);
+  padding: 2rem;
+  animation: fadeIn 0.5s $ease-smooth;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Header
+.order-items-header {
+  margin-bottom: 2rem;
+  animation: slideDown 0.6s $ease-smooth;
+
+  &__back {
+    :global(.cds--btn) {
+      color: $healthcare-primary;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+
+      &:hover {
+        background: rgba(8, 107, 86, 0.08);
+      }
+    }
+  }
+
+  &__info {
+    background: $healthcare-white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: $shadow-medium;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+  }
+
+  &__title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: $healthcare-neutral-900;
+    margin-bottom: 0.75rem;
+    font-family:
+      'IBM Plex Sans',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
+  }
+
+  &__meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    font-size: 0.9375rem;
+    color: $healthcare-neutral-700;
+
+    strong {
+      color: $healthcare-neutral-900;
+      font-weight: 600;
+    }
+  }
+
+  &__patient,
+  &__order-id {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Notification
+.order-items-notification {
+  margin-bottom: 1.5rem;
+  animation: slideDown 0.4s $ease-smooth;
+
+  :global(.cds--inline-notification) {
+    border-radius: 8px;
+    box-shadow: $shadow-soft;
+  }
+}
+
+// Section
+.order-items-section {
+  margin-bottom: 2rem;
+  animation: slideUp 0.6s $ease-smooth backwards;
+
+  &:nth-child(3) {
+    animation-delay: 0.1s;
+  }
+
+  &:nth-child(4) {
+    animation-delay: 0.2s;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  &__title-group {
+    flex: 1;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: $healthcare-neutral-900;
+    margin-bottom: 0.25rem;
+  }
+
+  &__subtitle {
+    font-size: 0.875rem;
+    color: $healthcare-neutral-700;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Table container
+.order-items-table-container {
+  background: $healthcare-white;
+  border-radius: 12px;
+  box-shadow: $shadow-medium;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+// Table wrapper
+.order-items-table-wrapper {
+  :global {
+    .cds--data-table {
+      thead {
+        background: $healthcare-neutral-100;
+
+        th {
+          color: $healthcare-neutral-900;
+          font-weight: 600;
+          font-size: 0.875rem;
+          letter-spacing: 0.02em;
+          border-bottom: 2px solid $healthcare-neutral-200;
+          padding: 1rem 1.5rem;
+        }
+      }
+
+      tbody {
+        tr {
+          transition: all 0.2s $ease-smooth;
+
+          &:hover {
+            background: rgba(8, 107, 86, 0.04);
+          }
+
+          td {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid $healthcare-neutral-200;
+            color: $healthcare-neutral-900;
+            font-size: 0.9375rem;
+          }
+        }
+      }
+    }
+
+    .cds--checkbox-wrapper {
+      margin: 0;
+    }
+
+    .cds--checkbox-label {
+      padding-left: 0;
+    }
+  }
+}
+
+// Table
+.order-items-table {
+  &__row {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 0;
+      background: $healthcare-primary;
+      transition: height 0.2s $ease-smooth;
+      border-radius: 0 3px 3px 0;
+    }
+
+    &:hover::after {
+      height: 60%;
+    }
+  }
+
+  &__disabled-checkbox {
+    color: $healthcare-neutral-300;
+    font-size: 1.25rem;
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+  }
+
+  &__item-name {
+    font-weight: 600;
+    color: $healthcare-neutral-900;
+  }
+
+  &__quantity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    padding: 0.25rem 0.5rem;
+    background: $healthcare-neutral-100;
+    border-radius: 6px;
+    font-weight: 600;
+    color: $healthcare-neutral-900;
+  }
+}
+
+// Empty state
+.order-items-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  color: $healthcare-neutral-700;
+
+  p {
+    font-size: 0.9375rem;
+    color: $healthcare-neutral-700;
+  }
+}
+
+// Modal
+.order-items-modal {
+  &__text {
+    font-size: 0.9375rem;
+    color: $healthcare-neutral-900;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+
+    strong {
+      color: $healthcare-primary;
+      font-weight: 600;
+    }
+  }
+
+  &__warning {
+    font-size: 0.875rem;
+    color: $healthcare-neutral-700;
+    padding: 0.75rem 1rem;
+    background: rgba(241, 194, 27, 0.1);
+    border-left: 3px solid $healthcare-warning;
+    border-radius: 6px;
+  }
+}
+
+// Loading state
+.order-items-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  animation: fadeIn 0.3s $ease-smooth;
+
+  :global(.cds--loading) {
+    stroke: $healthcare-primary;
+  }
+}
+
+// Error state
+.order-items-error {
+  padding: 2rem;
+
+  :global(.cds--inline-notification) {
+    border-radius: 8px;
+    box-shadow: $shadow-soft;
+  }
+}
+
+// Global button overrides
+:global {
+  // Primary button styling
+  .cds--btn--primary {
+    border-radius: 8px;
+    background: linear-gradient(
+      135deg,
+      $healthcare-secondary 0%,
+      $healthcare-secondary-light 100%
+    );
+    border: none;
+    padding: 0.875rem 1.5rem;
+    font-weight: 500;
+    box-shadow: $shadow-soft;
+    transition: all 0.3s $ease-smooth;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(
+        135deg,
+        darken($healthcare-secondary, 5%) 0%,
+        $healthcare-secondary 100%
+      );
+      box-shadow: $shadow-medium;
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: $healthcare-neutral-300;
+      box-shadow: none;
+    }
+  }
+
+  // Secondary button styling
+  .cds--btn--secondary {
+    border-radius: 8px;
+    border: 1.5px solid $healthcare-primary;
+    color: $healthcare-primary;
+    padding: 0.875rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s $ease-smooth;
+
+    &:hover:not(:disabled) {
+      background: rgba(8, 107, 86, 0.08);
+      border-color: $healthcare-primary-light;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  // Checkbox styling
+  .cds--checkbox-wrapper {
+    .cds--checkbox-label {
+      &::before {
+        border: 2px solid $healthcare-neutral-300;
+        border-radius: 4px;
+        transition: all 0.2s $ease-smooth;
+      }
+
+      &:hover::before {
+        border-color: $healthcare-primary;
+      }
+    }
+
+    .cds--checkbox:checked + .cds--checkbox-label {
+      &::before {
+        background-color: $healthcare-primary;
+        border-color: $healthcare-primary;
+      }
+
+      &::after {
+        border-bottom-color: $healthcare-white;
+        border-left-color: $healthcare-white;
+      }
+    }
+
+    .cds--checkbox:focus + .cds--checkbox-label {
+      &::before {
+        outline: 2px solid $healthcare-primary;
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  // Tag styling
+  .cds--tag {
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+
+    &.cds--tag--sm {
+      padding: 0.125rem 0.5rem;
+      font-size: 0.75rem;
+    }
+  }
+
+  // Modal styling
+  .cds--modal {
+    .cds--modal-container {
+      border-radius: 12px;
+      box-shadow: $shadow-large;
+    }
+
+    .cds--modal-header {
+      background: $healthcare-primary-lighter;
+      border-bottom: 2px solid $healthcare-neutral-200;
+      padding: 1.5rem;
+
+      .cds--modal-header__heading {
+        color: $healthcare-neutral-900;
+        font-weight: 600;
+        font-size: 1.25rem;
+      }
+
+      .cds--modal-close {
+        &:hover {
+          background: rgba(8, 107, 86, 0.1);
+        }
+      }
+    }
+
+    .cds--modal-content {
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .cds--modal-footer {
+      background: $healthcare-neutral-100;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid $healthcare-neutral-200;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .order-items-header {
+    &__meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+
+  .order-items-section {
+    &__header {
+      flex-direction: column;
+      align-items: stretch;
+
+      :global(.cds--btn) {
+        width: 100%;
+      }
+    }
+  }
+
+  .order-items-table-wrapper {
+    :global {
+      .cds--data-table {
+        thead th,
+        tbody td {
+          padding: 0.75rem 0.5rem;
+          font-size: 0.8125rem;
+        }
+      }
+    }
+  }
+}
+
+// Accessibility - reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .order-items-container,
+  .order-items-header,
+  .order-items-section {
+    animation: none;
+  }
+
+  .order-items-table__row::after {
+    transition: none;
+  }
+
+  :global(.cds--btn--primary):hover,
+  :global(.cds--btn--secondary):hover {
+    transform: none;
+  }
+}
+
+// High contrast mode
+@media (prefers-contrast: high) {
+  .order-items-table-container,
+  .order-items-header__info {
+    border: 2px solid $healthcare-neutral-900;
+  }
+
+  .order-items-table-wrapper {
+    :global {
+      .cds--data-table {
+        thead {
+          border-bottom: 3px solid $healthcare-neutral-900;
+        }
+
+        tbody tr td {
+          border-bottom: 2px solid $healthcare-neutral-900;
+        }
+      }
+    }
+  }
+}

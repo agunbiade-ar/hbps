@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+import decimal
+
+from aiomysql import Error as aiomysqlError
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+from app.models.models import OrderPayload
 from db_conn import async_get_db_connection
 from utils.security_utils import get_current_user
-from aiomysql import Error as aiomysqlError
 from utils.utils import set_logger
-from app.models.models import OrderPayload
-import decimal
 
 logger = set_logger(__name__)
 
@@ -20,14 +22,22 @@ async def get_orders(
 ):
     try:
         async with connection.cursor() as cursor:
-            query = """SELECT bv.status, p.patient_name, p.patient_id AS patient_id, o.*, i.concept_name, i.category FROM hayokbps.ORDERS o
-            join hayokbps.items i ON o.concept_id = i.concept_id
-            left join hayokbps.billing_patients p on p.patient_id = o.patient_id
-            left join hayokbps.billing_visits bv on bv.id = o.billing_visit_id
-            ORDER BY o.billing_visit_id DESC LIMIT %s OFFSET %s"""
+            query = """SELECT bv.status AS billing_visit_status, p.patient_name, p.patient_id AS patient_id, o.*, i.concept_name, i.category
+                    FROM hayokbps.orders o
+                    JOIN hayokbps.items i ON o.concept_id = i.concept_id
+                    LEFT JOIN hayokbps.billing_patients p on p.patient_id = o.patient_id
+                    LEFT JOIN hayokbps.billing_visits bv on bv.id = o.billing_visit_id
+                    ORDER BY o.billing_visit_id DESC LIMIT %s OFFSET %s
+                    """
 
             await cursor.execute(query, (limit, offset))
             orders = await cursor.fetchall()
+
+            if orders is None:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="error when fetching orders from db",
+                )
 
             fetched_orders = {}
             for row in orders:
@@ -37,7 +47,7 @@ async def get_orders(
                     fetched_orders[billing_visit_id] = {
                         "id": billing_visit_id,
                         "patient_id": row["patient_id"],
-                        "status": row["status"],
+                        "status": row["billing_visit_status"],
                         "patient_name": row["patient_name"],
                         "items": [],
                     }
@@ -50,6 +60,7 @@ async def get_orders(
                             "concept_id": row["concept_id"],
                             "category": row["category"],
                             "quantity": row["quantity"],
+                            "status": row["status"],
                         }
                     )
 
@@ -60,13 +71,107 @@ async def get_orders(
         logger.error(f"Database error when fetching orders: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"failed to retrieve orders from database",
+            detail="failed to retrieve orders from database",
         )
     except Exception as e:
         logger.error(f"unexpected error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"unexpected error",
+            detail="unexpected error",
+        )
+
+
+@router.get("/payers")
+async def get_payer_types(
+    payer_id: int = Query(default=None),
+    current_user=Depends(get_current_user),
+    connection=Depends(async_get_db_connection),
+):
+    try:
+        async with connection.cursor() as cursor:
+            if payer_id is None:
+                query = """SELECT * FROM hayokbps.payer_type"""
+                await cursor.execute(query)
+            else:
+                query = """SELECT * FROM hayokbps.payer_type WHERE id = %s"""
+                await cursor.execute(query, (payer_id,))
+
+            payer_types = await cursor.fetchall()
+            return {"payer_types": payer_types, "total_items": len(payer_types)}
+    except aiomysqlError as e:
+        logger.error(f"Database error when fetching payer types: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="failed to retrieve payer types from database",
+        )
+    except Exception as e:
+        logger.error(f"unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="unexpected error",
+        )
+
+
+@router.get("/{billing_visit_id}")
+async def get_order(
+    billing_visit_id: int,
+    current_user=Depends(get_current_user),
+    connection=Depends(async_get_db_connection),
+):
+    try:
+        async with connection.cursor() as cursor:
+            query = """SELECT bv.status AS billing_visit_status, p.patient_name, p.patient_id AS patient_id, o.*, i.concept_name, i.category
+                    FROM hayokbps.orders o
+                    JOIN hayokbps.items i ON o.concept_id = i.concept_id
+                    LEFT JOIN hayokbps.billing_patients p on p.patient_id = o.patient_id
+                    LEFT JOIN hayokbps.billing_visits bv on bv.id = o.billing_visit_id
+                    WHERE billing_visit_id = %s
+                    """
+
+            await cursor.execute(query, (billing_visit_id,))
+            fetched_order = await cursor.fetchall()
+
+            if fetched_order is None:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"error when fetching order with billing_visit {billing_visit_id} from db",
+                )
+
+            order = {}
+            for row in fetched_order:
+                order[billing_visit_id] = {
+                    "id": billing_visit_id,
+                    "patient_id": row["patient_id"],
+                    "status": row["billing_visit_status"],
+                    "patient_name": row["patient_name"],
+                    "items": [],
+                }
+
+                # if row.get("order_id"):
+                order[billing_visit_id]["items"].append(
+                    {
+                        "order_id": row["order_id"],
+                        "concept_name": row["concept_name"],
+                        "concept_id": row["concept_id"],
+                        "category": row["category"],
+                        "quantity": row["quantity"],
+                        "status": row["status"],
+                    }
+                )
+            order = list(order.values())[0]
+            return order
+
+    except aiomysqlError as e:
+        logger.error(f"Database error when fetching orders: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="failed to retrieve orders from database",
+        )
+    except Exception as e:
+        logger.error(f"unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="unexpected error",
         )
 
 
@@ -146,11 +251,11 @@ async def update_order(
                 )
 
             get_payer_price_query = """
-                SELECT 
-                    p.item_id, 
-                    items.concept_name, 
-                    p.payer_id, 
-                    p.price 
+                SELECT
+                    p.item_id,
+                    items.concept_name,
+                    p.payer_id,
+                    p.price
                 FROM hayokbps.payer_type pt
                 JOIN hayokbps.item_prices p ON p.payer_id = pt.id
                 LEFT JOIN hayokbps.items items ON items.id = p.item_id
@@ -213,10 +318,12 @@ async def update_order(
                 )
 
             bill_items_query = """
-                INSERT INTO hayokbps.bill_items 
+                INSERT INTO hayokbps.bill_items
                 (bill_id, order_id, description, item_type, quantity, unit_price, total_price)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
+
+            print(f"bill_id : {bill_id}")
 
             await cursor.executemany(bill_items_query, bill_items_batch)
 
@@ -227,13 +334,31 @@ async def update_order(
 
             await cursor.execute(update_bill_query, (total_amount, bill_id))
 
-            update_order_query = """
-                UPDATE hayokbps.billing_visits 
-                SET status = %s, updated_at = NOW() 
+            update_billing_visit_query = """
+                UPDATE hayokbps.billing_visits
+                SET status = %s, updated_at = NOW()
                 WHERE id = %s
             """
-            await cursor.execute(update_order_query, ("billed", billing_visit_id))
+            await cursor.execute(
+                update_billing_visit_query, ("billed", billing_visit_id)
+            )
 
+            parsed_order_ids = [item["order_id"] for item in bill_items]
+            order_status = "billed"
+
+            if parsed_order_ids:
+                placeholders = ", ".join(["%s"] * len(parsed_order_ids))
+
+            print(parsed_order_ids)
+            update_order_status_query = f"""
+                UPDATE hayokbps.orders
+                SET status = %s,
+                    updated_at = NOW()
+                WHERE order_id IN ({placeholders})"""
+
+            await cursor.execute(
+                update_order_status_query, tuple([order_status] + parsed_order_ids)
+            )
             # Step 10: Commit transaction
             await connection.commit()
 
@@ -265,35 +390,4 @@ async def update_order(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while generating the bill",
-        )
-
-
-@router.get("/payers")
-async def get_payer_types(
-    payer_id: int = Query(default=None),
-    current_user=Depends(get_current_user),
-    connection=Depends(async_get_db_connection),
-):
-    try:
-        async with connection.cursor() as cursor:
-            if payer_id is None:
-                query = """SELECT * FROM hayokbps.payer_type"""
-                await cursor.execute(query)
-            else:
-                query = """SELECT * FROM hayokbps.payer_type WHERE id = %s"""
-                await cursor.execute(query, (payer_id,))
-
-            payer_types = await cursor.fetchall()
-            return {"payer_types": payer_types, "total_items": len(payer_types)}
-    except aiomysqlError as e:
-        logger.error(f"Database error when fetching payer types: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"failed to retrieve payer types from database",
-        )
-    except Exception as e:
-        logger.error(f"unexpected error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"unexpected error",
         )

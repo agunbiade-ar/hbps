@@ -5,7 +5,6 @@ from aiomysql import Error as aiomysqlError
 from utils.security_utils import get_current_user
 from app.models.models import BillUpdateRequest
 from utils.utils import generate_receipt_number
-import json
 
 logger = set_logger(__name__)
 
@@ -32,13 +31,13 @@ async def get_all_bills(
         logger.error(f"Database error when fetching bills: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"failed to retrieve bills from database",
+            detail="failed to retrieve bills from database",
         )
     except Exception as e:
         logger.error(f"unexpected error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"unexpected error",
+            detail="unexpected error",
         )
 
 
@@ -87,13 +86,13 @@ async def get_bill(
         logger.error(f"Database error when fetching bill with id of {bill_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"failed to retrieve bills from database",
+            detail="failed to retrieve bills from database",
         )
     except Exception as e:
         logger.error(f"unexpected error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"unexpected error",
+            detail="unexpected error",
         )
 
 
@@ -120,7 +119,7 @@ async def update_bill(
             WHERE id IN ({placeholders}) AND bill_id = %s"""
 
             params = [bill_update.status] + bill_update.item_ids + [bill_id]
-            print(params)
+
             await cursor.execute(query, params)
             updated_row_count = cursor.rowcount
 
@@ -192,7 +191,7 @@ async def update_bill(
                 query, (bill_status, paid_total_amount, balance, bill_id)
             )
 
-            update_order_query = """
+            update_billing_visit_query = """
             UPDATE hayokbps.billing_visits 
             SET status = %s,
                 updated_at = NOW() 
@@ -200,7 +199,39 @@ async def update_bill(
             """
 
             await cursor.execute(
-                update_order_query, (bill_status, bill.get("billing_visit_id"))
+                update_billing_visit_query, (bill_status, bill.get("billing_visit_id"))
+            )
+
+            select_orders_query = """
+                SELECT * FROM hayokbps.orders
+                WHERE billing_visit_id = %s"""
+
+            await cursor.execute(select_orders_query, (bill.get("billing_visit_id")))
+            orders = await cursor.fetchall()
+
+            if orders is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"no orders for billing visit {bill.get('billing_visit_id')}",
+                )
+
+            retrieved_order_ids = [
+                order.get("id") for order in orders if order.get("id")
+            ]
+
+            placeholders = ", ".join(["%s"] * len(retrieved_order_ids))
+
+            update_order_status_query = f"""
+            UPDATE hayokbps.orders 
+            SET status = %s,
+                updated_at = NOW() 
+            WHERE id IN ({placeholders})
+            AND billing_visit_id = %s            
+            """
+
+            await cursor.execute(
+                update_order_status_query,
+                (bill_status, *retrieved_order_ids, bill.get("billing_visit_id")),
             )
 
             # create a payment
@@ -208,23 +239,26 @@ async def update_bill(
             INSERT INTO hayokbps.payments (bill_id, amount, receipt_number, cashier_id, patient_id) VALUES (%s, %s, %s, %s, %s)"""
 
             receipt_number = generate_receipt_number()
-            payment_params = [
+            payment_params = (
                 bill_id,
                 paid_bill_items["paid_total_amount"],
                 receipt_number,
                 current_user.get("id"),
                 bill.get("patient_id"),
-            ]
+            )
 
-            await cursor.execute(create_payment_query, tuple(payment_params))
+            await cursor.execute(create_payment_query, payment_params)
             payment_id = cursor.lastrowid
 
-            format_strings = ",".join(["%s"] * len(paid_bill_items["ids"]))
+            format_strings = ", ".join(["%s"] * len(paid_bill_items["ids"]))
 
-            update_bill_items_query = f"""UPDATE hayokbps.bill_items SET payment_id = %s WHERE id IN ({format_strings})"""
+            update_bill_items_query = f"""UPDATE hayokbps.bill_items SET payment_id = %s,
+                updated_at = NOW()
+             WHERE id IN ({format_strings})"""
 
             await cursor.execute(
-                update_bill_items_query, tuple([payment_id] + paid_bill_items["ids"])
+                update_bill_items_query,
+                tuple([payment_id] + paid_bill_items["ids"]),
             )
             # Fetch the updated bill
             query = """

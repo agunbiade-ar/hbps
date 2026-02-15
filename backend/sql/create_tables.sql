@@ -196,6 +196,7 @@ CREATE TABLE hayokbps.orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     billing_visit_id INT NOT NULL,
     order_id INT NOT NULL UNIQUE,
+    status ENUM('open', 'billed', 'paid', 'dispensed') default open,
     -- encounter_id INT NOT NULL,
     patient_id INT NOT NULL,
     concept_id INT NOT NULL,
@@ -211,10 +212,11 @@ CREATE TABLE billing_visits (
     visit_id INT NOT NULL,          -- from OpenMRS
     patient_id INT NOT NULL,
     -- encounter_id INT NOT NULL,
-    status ENUM ('open', 'billed', 'partially_paid', 'paid', 'cancelled'),
+    status ENUM ('open', 'billed', 'partially_paid', 'paid', 'cancelled') DEFAULT 'open',
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
     UNIQUE KEY unique_visit (visit_id)
 );
 

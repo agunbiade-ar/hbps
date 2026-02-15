@@ -6,7 +6,7 @@ export const orders_api = createApi({
   tagTypes: ['orders'],
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
-    getAllOrders: builder.query({
+    getAllBillingVisits: builder.query({
       query: ({ offset, limit }) =>
         `/orders/orders?offset=${offset ?? 0}&limit=${limit ?? 100}`,
       transformResponse: (response) => response,
@@ -21,7 +21,7 @@ export const orders_api = createApi({
             ]
           : [{ type: 'orders', id: 'LIST' }],
     }),
-    getOrder: builder.query({
+    getBillingVisit: builder.query({
       query: ({ id }) => `/orders/${id}`,
       transformResponse: (response) => response,
       providesTags: (result, error, arg) => [{ type: 'orders', id: arg.id }],
@@ -40,15 +40,19 @@ export const orders_api = createApi({
       async onQueryStarted({ id, body }, { dispatch, queryFulfilled }) {
         // 1️⃣ Immediately update the cache for the single bill
         const patchResult = dispatch(
-          orders_api.util.updateQueryData('getOrder', { id }, (draft) => {
-            Object.assign(draft, body); // merge changes
-          }),
+          orders_api.util.updateQueryData(
+            'getBillingVisit',
+            { id },
+            (draft) => {
+              Object.assign(draft, body); // merge changes
+            },
+          ),
         );
 
         // 2️⃣ Optionally update the list cache too
         const patchListResult = dispatch(
           orders_api.util.updateQueryData(
-            'getAllOrders',
+            'getAllBillingVisits',
             { patient_query: '', offset: 0 },
             (draft) => {
               const order = draft.orders.find((b) => b.id === id);
@@ -81,8 +85,8 @@ export const orders_api = createApi({
 });
 
 export const {
-  useGetAllOrdersQuery,
-  useGetOrderQuery,
+  useGetAllBillingVisitsQuery,
+  useGetBillingVisitQuery,
   useUpdateOrderMutation,
   useGetPayerTypesQuery,
 } = orders_api;

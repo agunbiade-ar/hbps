@@ -35,100 +35,120 @@ def fetch_existing_billing_visits(visit_ids, cursor):
     return results
 
 
-def poll_orders(source_db, target_db, sleep_interval=3):
+def poll_orders(source_db, target_db):
     """
     Polls OpenMRS orders and inserts them into our billing system.
     Groups orders by visit using billing_visits table.
+    This version prevents assigning orders to the wrong patient.
     """
     source_cursor = source_db.cursor(dictionary=True, buffered=True)
     target_cursor = target_db.cursor(dictionary=True, buffered=True)
 
+    last_processed_id = get_last_processed_order_id(target_db)
+
     try:
-        last_processed_id = get_last_processed_order_id(target_db)
-        # Fetch new orders
         query = """
-        SELECT
-            pn.given_name,
-            pn.middle_name,
-            pn.family_name,
-            o.order_id,
-            o.encounter_id,
-            o.patient_id,
-            o.concept_id,
-            cn.name AS concept_name,
-            do.quantity,
-            ot.name AS order_type,
-            v.visit_id
-        FROM orders o
-        JOIN order_type ot ON ot.order_type_id = o.order_type_id AND ot.retired = 0
-        JOIN person_name pn ON o.patient_id = pn.person_id AND pn.voided = 0
-        JOIN concept_name cn ON o.concept_id = cn.concept_id AND cn.voided = 0
-        JOIN encounter e ON o.encounter_id = e.encounter_id
-        JOIN visit v ON e.visit_id = v.visit_id
-        LEFT JOIN drug_order do ON o.order_id = do.order_id
-        WHERE o.order_id > %s
-            AND o.voided = 0
-            AND cn.locale = 'en'
-            AND cn.concept_name_type = 'FULLY_SPECIFIED'
-        ORDER BY o.order_id ASC
+            SELECT
+                o.order_id,
+                o.encounter_id,
+                o.patient_id,
+                o.concept_id,
+                (SELECT cn.name FROM concept_name cn 
+                    WHERE cn.concept_id = o.concept_id 
+                    AND cn.locale = 'en'
+                    AND cn.concept_name_type = 'FULLY_SPECIFIED'
+                    AND cn.voided = 0
+                    LIMIT 1) AS concept_name,
+                ot.name AS order_type,
+                e.visit_id,
+                o.order_action,  -- Add this to see the action
+                COALESCE(
+                    (SELECT MIN(quantity) FROM drug_order WHERE order_id = o.order_id LIMIT 1),
+                    1
+                ) AS quantity
+            FROM orders o
+            JOIN order_type ot ON ot.order_type_id = o.order_type_id AND ot.retired = 0
+            JOIN encounter e ON e.encounter_id = o.encounter_id
+            WHERE o.order_id > %s
+                AND o.voided = 0
+                AND o.order_action = 'NEW'  -- Only NEW orders, not DISCONTINUE orders
+            ORDER BY o.order_id ASC
         """
         source_cursor.execute(query, (last_processed_id,))
 
+        total_processed = 0
         while True:
             rows = source_cursor.fetchmany(100)
             if not rows:
                 break
 
-            # Map visit_id → patient_id
-            visit_to_patient = {row["visit_id"]: row["patient_id"] for row in rows}
+            order_ids = [row["order_id"] for row in rows]
+            if len(order_ids) != len(set(order_ids)):
+                print("WARNING: Duplicate order_ids detected in batch!")
+                for oid in set(order_ids):
+                    count = order_ids.count(oid)
+                    if count > 1:
+                        print(f"  order_id {oid} appears {count} times")
+                        break
+
+            # Get all visit_ids from current batch
+            visit_ids = list(
+                set(row["visit_id"] for row in rows if row["visit_id"] is not None)
+            )
 
             # Fetch existing billing_visits
-            existing_visits = fetch_existing_billing_visits(
-                list(visit_to_patient.keys()), target_cursor
-            )
+            existing_visits = fetch_existing_billing_visits(visit_ids, target_cursor)
             existing_visits_map = {v["visit_id"]: v["id"] for v in existing_visits}
 
-            # Create missing billing_visits
-            for visit_id, patient_id in visit_to_patient.items():
+            # Insert missing visits
+            for visit_id in visit_ids:
                 if visit_id not in existing_visits_map:
-                    insert_visit = """
+                    # Pick the patient_id from any row that has this visit_id
+                    patient_id = next(
+                        row["patient_id"] for row in rows if row["visit_id"] == visit_id
+                    )
+                    insert_visit_query = """
                         INSERT INTO hayokbps.billing_visits (visit_id, patient_id)
-                        VALUES (%s, %s, %s)
+                        VALUES (%s, %s)
                     """
-                    target_cursor.execute(
-                        insert_visit, (visit_id, patient_id)
-                    )  # , row.get("encounter_id"))
-
+                    target_cursor.execute(insert_visit_query, (visit_id, patient_id))
                     existing_visits_map[visit_id] = target_cursor.lastrowid
 
-            # Prepare orders batch
-            batch = []
-            for row in rows:
-                batch.append(
-                    (
-                        existing_visits_map[row["visit_id"]],
-                        row["order_id"],
-                        row["patient_id"],
-                        row["concept_id"],
-                        row.get("quantity") or 1,
-                    )
+            # Prepare orders batch: each row keeps its patient_id
+            batch = [
+                (
+                    existing_visits_map.get(row["visit_id"]),  # billing_visit_id
+                    row["order_id"],
+                    row["patient_id"],
+                    row["concept_id"],
+                    row.get("quantity") or 1,
                 )
+                for row in rows
+            ]
 
-            # Insert orders
+            # Insert orders with duplicate protection
             insert_order_query = """
-                INSERT INTO hayokbps.orders (billing_visit_id, order_id, patient_id, concept_id, quantity)
+                INSERT IGNORE INTO hayokbps.orders 
+                (billing_visit_id, order_id, patient_id, concept_id, quantity)
                 VALUES (%s, %s, %s, %s, %s)
             """
             target_cursor.executemany(insert_order_query, batch)
+
             last_processed_id = rows[-1]["order_id"]
+            total_processed += len(batch)
+
+        # Commit once after all batches
+        if total_processed > 0:
             update_last_processed_order_id(target_db, last_processed_id)
             target_db.commit()
-            print(f"Last processed order id: {last_processed_id}")
+            print(f"Processed {total_processed} orders. Last ID: {last_processed_id}")
+        else:
+            print("No new orders to process")
+
     except Exception as e:
         target_db.rollback()
-        print(f"Error in poll_orders loop: {e}")
-    finally:
-        time.sleep(sleep_interval * 60)
+        print(f"Error in poll_orders: {e}")
+        raise
 
 
 def poll_for_patients(source_db, target_db, sleep_interval=5):
@@ -173,23 +193,7 @@ def poll_for_patients(source_db, target_db, sleep_interval=5):
             update_last_processed_patient_id(
                 target_db=target_db, current_id=last_processed_id
             )
+        time.sleep(sleep_interval * 60)
     except Exception as e:
         target_db.rollback()
         print("patients batch insertion failed: ", e)
-    finally:
-        time.sleep(sleep_interval * 60)
-
-
-def poll_old_patients_for_voided(polling_interval=60):
-    """check if patient was deleted in openmrs and then if so, remove from our billing patient db"""
-    pass
-
-
-def poll_old_patients_for_updates(polling_interval=60):
-    """check patient payer type, if insurance or normal, and update our billing patient accordingly"""
-    pass
-
-
-def poll_old_orders_for_voided(polling_interval=15):
-    """check old orders, if they have been cancelled, then delete from our orders table"""
-    pass

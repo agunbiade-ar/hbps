@@ -20,6 +20,7 @@ import PaymentsList from './pages/Payments/PaymentsList.tsx';
 import { RegisterUser } from './pages/Users/RegisterUser.tsx';
 import { PriceListManagement } from './pages/Pricing/PriceList.tsx';
 import { OrdersManagement } from './pages/Orders/orders-management.tsx';
+import { OrderItemsManagement } from './pages/Orders/order-items-management.tsx';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -62,7 +63,7 @@ function App() {
       </Route>
 
       {/* Root redirect */}
-      <Route path='/' element={<Navigate to='/finance/bills' replace />} />
+      <Route path='/' element={<Navigate to='/orders' replace />} />
 
       {/* Protected routes with Layout */}
       <Route element={<ProtectedRoute />}>
@@ -75,6 +76,7 @@ function App() {
         >
           <Route path='/register-user' element={<RegisterUser />} />
           <Route path='/orders' element={<OrdersManagement />} />
+          <Route path='orders/:id' element={<OrderItemsManagement />} />
 
           {/* Finance routes */}
           <Route path='/finance' element={<FinanceLayout />}>

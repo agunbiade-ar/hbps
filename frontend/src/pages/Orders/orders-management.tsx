@@ -17,18 +17,13 @@ import {
   Modal,
   Tag,
   Pagination,
-  RadioButtonGroup,
-  RadioButton,
 } from '@carbon/react';
-import { ShoppingCart, Receipt, View } from '@carbon/icons-react';
+import { ShoppingCart, View, ArrowRight } from '@carbon/icons-react';
+import { useNavigate } from 'react-router-dom';
 import './orders-management.scss';
 
 // API hooks
-import {
-  useGetAllOrdersQuery,
-  useGetPayerTypesQuery,
-  useUpdateOrderMutation,
-} from '../../api/Orders';
+import { useGetAllBillingVisitsQuery } from '../../api/Orders';
 
 interface OrderItem {
   concept_name: string;
@@ -47,28 +42,20 @@ interface PatientOrder {
 }
 
 export const OrdersManagement = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [isGenerateBillModalOpen, setIsGenerateBillModalOpen] = useState(false);
   const [isViewDetailsModalOpen, setIsViewDetailsModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<PatientOrder | null>(
     null,
   );
-  const [orderToConvert, setOrderToConvert] = useState<PatientOrder | null>(
-    null,
-  );
-  const [updateOrder, { isLoading }] = useUpdateOrderMutation();
-
-  const [selectedPayerType, setSelectedPayerType] = useState<string>('');
-  const [isProcessing, setIsProcessing] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
 
   // Fetch orders
-  const ordersQuery = useGetAllOrdersQuery(
+  const ordersQuery = useGetAllBillingVisitsQuery(
     {
       offset: pageSize * (currentPage - 1),
       receipt_number: searchQuery,
@@ -79,13 +66,6 @@ export const OrdersManagement = () => {
       pollingInterval: 120000,
     },
   );
-
-  // Fetch payer types
-  const payerQuery = useGetPayerTypesQuery({});
-  const payerTypes = useMemo(() => {
-    const payers = payerQuery.data?.payer_types || [];
-    return payers;
-  }, [payerQuery]);
 
   // Filter orders
   const filteredPatientOrders = useMemo(() => {
@@ -124,54 +104,11 @@ export const OrdersManagement = () => {
     return labels[category] || category;
   };
 
-  // Handle generate bill click
-  const handleGenerateBillClick = (patientOrder: PatientOrder) => {
-    setOrderToConvert(patientOrder);
-    setSelectedPayerType('');
-    setIsGenerateBillModalOpen(true);
-  };
-
-  // Confirm generate bill
-  const handleConfirmGenerateBill = async () => {
-    if (!orderToConvert) return;
-
-    if (!selectedPayerType) {
-      setError('Please select a payer type before generating the bill');
-      return;
-    }
-
-    try {
-      setIsProcessing(true);
-      setError('');
-
-      console.log('Generating bill for order ID:', orderToConvert.id);
-
-      const payload = {
-        id: orderToConvert.id,
-        patient_name: orderToConvert.patient_name,
-        patient_id: orderToConvert?.patient_id,
-        payer_id: selectedPayerType,
-        items: orderToConvert.items,
-      };
-
-      await updateOrder({ id: orderToConvert.id, body: payload }).unwrap();
-
-      // await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      setSuccess(
-        `Successfully generated bill for ${orderToConvert.patient_name} (Order #${orderToConvert.id})!`,
-      );
-      setIsGenerateBillModalOpen(false);
-      setOrderToConvert(null);
-      setSelectedPayerType('');
-
-      ordersQuery.refetch();
-    } catch (err) {
-      const errMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError('Failed to generate bill: ' + errMessage);
-    } finally {
-      setIsProcessing(false);
-    }
+  // Navigate to order items page with data
+  const handleManageOrderItems = (patientOrder: PatientOrder) => {
+    navigate(`/orders/${patientOrder.id}`, {
+      state: { orderDetails: patientOrder },
+    });
   };
 
   // Handle view patient details
@@ -184,7 +121,7 @@ export const OrdersManagement = () => {
   const getStatusTag = (status?: string) => {
     const statusConfig = {
       open: { type: 'blue', label: 'Open' },
-      billed: { type: 'green', label: 'Billed' },
+      billed: { type: 'purple', label: 'Billed' },
       paid: { type: 'green', label: 'Paid' },
       cancelled: { type: 'red', label: 'Cancelled' },
     };
@@ -201,7 +138,7 @@ export const OrdersManagement = () => {
   const headers = [
     { key: 'orderId', header: 'Order ID' },
     { key: 'patientName', header: 'Patient Name' },
-    { key: 'itemsCount', header: 'Items' },
+    // { key: 'itemsCount', header: 'Items' },
     { key: 'categories', header: 'Categories' },
     { key: 'status', header: 'Status' },
     { key: 'actions', header: 'Actions' },
@@ -228,7 +165,7 @@ export const OrdersManagement = () => {
               Orders Management
             </h1>
             <p className='orders-management-header__subtitle'>
-              View and manage patient orders to generate bills
+              View and manage patient orders and billing
             </p>
           </div>
         </div>
@@ -241,17 +178,6 @@ export const OrdersManagement = () => {
             title='Error'
             subtitle={error}
             onClose={() => setError('')}
-          />
-        </div>
-      )}
-
-      {success && (
-        <div className='orders-management-notification'>
-          <InlineNotification
-            kind='success'
-            title='Success'
-            subtitle={success}
-            onClose={() => setSuccess('')}
           />
         </div>
       )}
@@ -309,8 +235,6 @@ export const OrdersManagement = () => {
                       );
                       if (!patientOrder) return null;
 
-                      const isOpen =
-                        patientOrder.status === 'open' || !patientOrder.status;
                       const categories = [
                         ...new Set(patientOrder.items.map((i) => i.category)),
                       ];
@@ -331,12 +255,12 @@ export const OrdersManagement = () => {
                               {patientOrder.patient_name}
                             </div>
                           </TableCell>
-                          <TableCell>
+                          {/* <TableCell>
                             <span className='orders-management-table__total-items'>
                               {patientOrder.items.length} item
                               {patientOrder.items.length !== 1 ? 's' : ''}
                             </span>
-                          </TableCell>
+                          </TableCell> */}
                           <TableCell>
                             <div className='orders-management-table__categories'>
                               {categories.map((cat) => (
@@ -361,18 +285,16 @@ export const OrdersManagement = () => {
                                   handleViewPatientDetails(patientOrder)
                                 }
                               />
-                              {isOpen && (
-                                <Button
-                                  kind='primary'
-                                  size='sm'
-                                  renderIcon={Receipt}
-                                  onClick={() =>
-                                    handleGenerateBillClick(patientOrder)
-                                  }
-                                >
-                                  Generate Bill
-                                </Button>
-                              )}
+                              <Button
+                                kind='primary'
+                                size='sm'
+                                renderIcon={ArrowRight}
+                                onClick={() =>
+                                  handleManageOrderItems(patientOrder)
+                                }
+                              >
+                                Manage Items
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -412,120 +334,6 @@ export const OrdersManagement = () => {
           />
         </div>
       </div>
-
-      {/* Generate Bill Modal */}
-      <Modal
-        open={isGenerateBillModalOpen}
-        onRequestClose={() => {
-          setIsGenerateBillModalOpen(false);
-          setOrderToConvert(null);
-          setSelectedPayerType('');
-        }}
-        modalHeading='Generate Bill from Order'
-        primaryButtonText={isProcessing ? 'Generating...' : 'Generate Bill'}
-        secondaryButtonText='Cancel'
-        onRequestSubmit={handleConfirmGenerateBill}
-        primaryButtonDisabled={isProcessing || !selectedPayerType}
-        danger={false}
-        size='md'
-      >
-        {orderToConvert && (
-          <div className='orders-management-modal__content'>
-            <p className='orders-management-modal__text'>
-              You are about to generate a bill for the following order:
-            </p>
-
-            <div className='orders-management-modal__order-summary'>
-              <div className='orders-management-modal__order-header'>
-                <div>
-                  <strong className='orders-management-modal__patient-name'>
-                    {orderToConvert.patient_name}
-                  </strong>
-                  <span className='orders-management-modal__order-id'>
-                    Order #{orderToConvert.id}
-                  </span>
-                </div>
-                {getStatusTag(orderToConvert.status)}
-              </div>
-
-              <div className='orders-management-modal__items-list'>
-                <h3 className='orders-management-modal__items-title'>
-                  Items ({orderToConvert.items.length}):
-                </h3>
-                {orderToConvert.items.map((item, index) => (
-                  <div
-                    key={`${item.concept_id}-${index}`}
-                    className='orders-management-modal__item'
-                  >
-                    <div className='orders-management-modal__item-header'>
-                      <strong>{item.concept_name}</strong>
-                      <Tag size='sm'>{getCategoryLabel(item.category)}</Tag>
-                    </div>
-                    <div className='orders-management-modal__item-details'>
-                      <span>Concept ID: {item.concept_id}</span>
-                      <span>Quantity: {item.quantity}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Payer Type Selection */}
-            <div className='orders-management-modal__payer-section'>
-              <h3 className='orders-management-modal__payer-title'>
-                Select Payer Type{' '}
-                <span className='orders-management-modal__required'>*</span>
-              </h3>
-              <p className='orders-management-modal__payer-subtitle'>
-                Choose who will be responsible for payment of this bill
-              </p>
-
-              {payerQuery.isLoading ? (
-                <div className='orders-management-modal__payer-loading'>
-                  <Loading
-                    description='Loading payer types...'
-                    withOverlay={false}
-                    small
-                  />
-                </div>
-              ) : payerTypes.length > 0 ? (
-                <RadioButtonGroup
-                  name='payer-type-group'
-                  valueSelected={selectedPayerType}
-                  onChange={(value) => setSelectedPayerType(value as string)}
-                  className='orders-management-modal__payer-options'
-                >
-                  {payerTypes.map((payer: any) => {
-                    return (
-                      <RadioButton
-                        key={payer.id}
-                        id={`payer-${payer.id}`}
-                        labelText={payer.payer_code}
-                        value={payer.id.toString()}
-                        className='orders-management-modal__payer-option'
-                      />
-                    );
-                  })}
-                </RadioButtonGroup>
-              ) : (
-                <div className='orders-management-modal__payer-error'>
-                  <p>
-                    No payer types available. Please contact your administrator.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className='orders-management-modal__warning'>
-              <p>
-                <strong>Note:</strong> This will create a new bill with all
-                items from this order. The order status will be updated to
-                "Billed".
-              </p>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {/* View Patient Details Modal */}
       <Modal

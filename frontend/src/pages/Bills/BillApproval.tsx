@@ -131,9 +131,9 @@ const BillDetailApproval = () => {
           item_ids,
         },
       };
-      const res = await updateBill(payload);
+      const res = await updateBill(payload).unwrap();
 
-      setSuccess(`${res.data.message}`);
+      setSuccess(`${res?.message}`);
       setIsUpdateModalOpen(false);
       setSelectedItems(new Set());
       return res;
