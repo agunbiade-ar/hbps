@@ -40,7 +40,7 @@ export const RegisterUser = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  const [registerUser, { isLoading: isRegistering }] =
+  const [registerUser] =
     useRegisterUserMutation();
 
   const getUsersQuery = useGetAllUsersQuery(
@@ -232,7 +232,7 @@ export const RegisterUser = () => {
                   <TableToolbarSearch
                     persistent
                     placeholder='Search by name, username, or role'
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e: any) => setSearchQuery(e.target.value)}
                     value={searchQuery}
                   />
                 </TableToolbarContent>

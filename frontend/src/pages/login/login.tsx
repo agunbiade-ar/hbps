@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Form,
   TextInput,
@@ -7,7 +7,7 @@ import {
   InlineNotification,
 } from '@carbon/react';
 import './login.scss';
-import { clearError, SignIn } from '../../redux/features/slices/authSlice.ts';
+import { SignIn } from '../../redux/features/slices/authSlice.ts';
 import { useAppDispatch, useAppSelector } from '../../redux/store.ts';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,7 +19,7 @@ const Login = () => {
 
   const navigate = useNavigate();
 
-  const { loading, error } = useAppSelector((state) => state.auth);
+  const { error } = useAppSelector((state) => state.auth);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

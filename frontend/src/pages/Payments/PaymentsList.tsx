@@ -537,7 +537,7 @@ const PaymentsList = () => {
                   <TableToolbarSearch
                     persistent
                     placeholder='Search by receipt number or patient name'
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e: any) => setSearchQuery(e.target.value)}
                     value={searchQuery}
                   />
                 </TableToolbarContent>

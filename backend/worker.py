@@ -9,15 +9,18 @@ import time
 # this is a one time thing, anytime the worker script runs
 # if any new concepts are added into openmrs, it should pick it up
 
-# these are timed
-# main.py
-while True:
-    try:
-        poll_orders(source_db=source_db, target_db=target_db)
-    except Exception as e:
-        print(f"Error in polling cycle: {e}")
 
-    time.sleep(3 * 60)
+def main():
+    while True:
+        try:
+            poll_orders(source_db, target_db)
+            transport_concepts_from_openmrsDB(source_db, target_db)
+            poll_for_patients(source_db, target_db)
+        except Exception as e:
+            print(f"Error in polling cycle: {e}")
 
-    # transport_concepts_from_openmrsDB(source_db=source_db, target_db=target_db)
-    # poll_for_patients(source_db=source_db, target_db=target_db)
+        time.sleep(3 * 60)
+
+
+if __name__ == "__main__":
+    main()

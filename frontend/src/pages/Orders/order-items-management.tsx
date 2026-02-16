@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Button,
   Loading,
@@ -18,7 +18,7 @@ import {
   RadioButton,
 } from '@carbon/react';
 import { ArrowLeft, CheckmarkFilled, Delivery } from '@carbon/icons-react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import './order-items-management.scss';
 import {
   useUpdateOrderMutation,
@@ -46,7 +46,6 @@ interface OrderDetails {
 
 export const OrderItemsManagement = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { id } = useParams();
 
   const [error, setError] = useState('');
@@ -57,10 +56,11 @@ export const OrderItemsManagement = () => {
 
   // Fetch payer types
   const payerQuery = useGetPayerTypesQuery({});
-  const payerTypes = useMemo(() => {
-    const payers = payerQuery.data?.payer_types || [];
-    return payers;
-  }, [payerQuery]);
+  const payerTypes: { id: number; payer_code: string; payer_name: string }[] =
+    useMemo(() => {
+      const payers = payerQuery.data?.payer_types || [];
+      return payers;
+    }, [payerQuery]);
 
   // Get order data from navigation state
   // const orderDetails = location.state?.orderDetails as OrderDetails | undefined;
@@ -741,11 +741,11 @@ export const OrderItemsManagement = () => {
                   onChange={(value) => setSelectedPayerType(value as string)}
                   className='order-items-modal__payer-options'
                 >
-                  {payerTypes.map((payer: any) => (
+                  {payerTypes.map((payer) => (
                     <RadioButton
                       key={payer.id}
                       id={`payer-${payer.id}`}
-                      labelText={payer.payer_code || payer.name}
+                      labelText={payer.payer_code || payer.payer_name}
                       value={payer.id.toString()}
                     />
                   ))}

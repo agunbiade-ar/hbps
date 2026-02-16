@@ -14,7 +14,7 @@ export const orders_api = createApi({
         result?.orders
           ? [
               { type: 'orders', id: 'LIST' },
-              ...result.orders.map((order) => ({
+              ...result.orders.map((order: any) => ({
                 type: 'orders',
                 id: order.id,
               })),
@@ -24,7 +24,7 @@ export const orders_api = createApi({
     getBillingVisit: builder.query({
       query: ({ id }) => `/orders/${id}`,
       transformResponse: (response) => response,
-      providesTags: (result, error, arg) => [{ type: 'orders', id: arg.id }],
+      providesTags: (_result, _error, arg) => [{ type: 'orders', id: arg.id }],
     }),
     updateOrder: builder.mutation({
       query: ({ id, body }) => ({
@@ -32,7 +32,7 @@ export const orders_api = createApi({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (result, error, arg) => [
+      invalidatesTags: (_result, _error, arg) => [
         { type: 'orders', id: arg.id }, // refetch this order
         { type: 'orders', id: 'LIST' }, // refetch list
       ],
@@ -55,7 +55,7 @@ export const orders_api = createApi({
             'getAllBillingVisits',
             { patient_query: '', offset: 0 },
             (draft) => {
-              const order = draft.orders.find((b) => b.id === id);
+              const order = draft.orders.find((b: any) => b.id === id);
               if (order) Object.assign(order, body);
             },
           ),
@@ -72,7 +72,7 @@ export const orders_api = createApi({
     }),
     getPayerTypes: builder.query({
       query: (args) => {
-        const params: Record<int, any> = {};
+        const params: Record<string, any> = {};
         if (args.payer_id) params['payer_id'] = args.payer_id;
         return {
           url: '/orders/payers',

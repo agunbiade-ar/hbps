@@ -10,7 +10,7 @@ load_dotenv()
 source_db_config = {
     "database": os.getenv("OPENMRS_DB"),
     "password": os.getenv("OPENMRS_DB_PASSWORD"),
-    "host": os.getenv("BILLING_DB_HOST"),
+    "host": os.getenv("OPENMRS_DB_HOST"),
     "user": os.getenv("OPENMRS_DB_USER"),
     "port": os.getenv("OPENMRS_DB_PORT"),
 }

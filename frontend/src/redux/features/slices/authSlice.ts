@@ -6,7 +6,6 @@ import {
 import type { User } from '../../../constants';
 import { axios_api } from '../../../api/axios';
 import axios from 'axios';
-import { store } from '../../store';
 
 export type AuthState = {
   user: User | null;

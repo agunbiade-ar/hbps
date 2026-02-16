@@ -34,7 +34,7 @@ export const users_api = createApi({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (result, error, arg) => [
+      invalidatesTags: (_result, _error, _arg) => [
         { type: 'users', id: 'LIST' }, // refetch list
       ],
     }),

@@ -151,7 +151,7 @@ def poll_orders(source_db, target_db):
         raise
 
 
-def poll_for_patients(source_db, target_db, sleep_interval=5):
+def poll_for_patients(source_db, target_db):
     fetch_patients_query = """
                             SELECT
                             p.patient_id,
@@ -193,7 +193,6 @@ def poll_for_patients(source_db, target_db, sleep_interval=5):
             update_last_processed_patient_id(
                 target_db=target_db, current_id=last_processed_id
             )
-        time.sleep(sleep_interval * 60)
     except Exception as e:
         target_db.rollback()
         print("patients batch insertion failed: ", e)

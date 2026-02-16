@@ -286,7 +286,7 @@ const BillingList = () => {
                   <TableToolbarSearch
                     persistent
                     placeholder='Search by patient identifier, name'
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e: any) => setSearchQuery(e.target.value)}
                     value={searchQuery}
                   />
                 </TableToolbarContent>

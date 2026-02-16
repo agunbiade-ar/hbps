@@ -15,16 +15,16 @@ import {
   TableToolbarContent,
   TableToolbarSearch,
   Modal,
-  TextInput,
+  // TextInput,
   NumberInput,
   Select,
   SelectItem,
   Tag,
-  Tabs,
-  TabList,
-  Tab,
-  TabPanels,
-  TabPanel,
+  // Tabs,
+  // TabList,
+  // Tab,
+  // TabPanels,
+  // TabPanel,
   InlineLoading,
 } from '@carbon/react';
 import {
@@ -34,7 +34,7 @@ import {
   Money,
   // History,
   Undo,
-  Percentage,
+  // Percentage,
   Search,
   ChartHistogram,
 } from '@carbon/icons-react';
@@ -167,11 +167,11 @@ export const PriceListManagement = () => {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PriceItem | null>(null);
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-  const [bulkAdjustmentType, setBulkAdjustmentType] = useState<
-    'percentage' | 'fixed'
-  >('percentage');
-  const [bulkAdjustmentValue, setBulkAdjustmentValue] = useState(0);
+  // const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  // const [bulkAdjustmentType, setBulkAdjustmentType] = useState<
+  // 'percentage' | 'fixed'
+  // >('percentage');
+  // const [bulkAdjustmentValue, setBulkAdjustmentValue] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -317,41 +317,41 @@ export const PriceListManagement = () => {
   };
 
   // Handle bulk adjustment
-  const handleApplyBulkAdjustment = () => {
-    if (bulkAdjustmentValue === 0) {
-      setError('Please enter an adjustment value');
-      return;
-    }
+  // const handleApplyBulkAdjustment = () => {
+  //   if (bulkAdjustmentValue === 0) {
+  //     setError('Please enter an adjustment value');
+  //     return;
+  //   }
 
-    const newEditedPrices = new Map(editedPrices);
-    const newEditingRows = new Set(editingRows);
+  //   const newEditedPrices = new Map(editedPrices);
+  //   const newEditingRows = new Set(editingRows);
 
-    filteredItems.forEach((item) => {
-      let newPrice = item.current_price;
+  //   filteredItems.forEach((item) => {
+  //     let newPrice = item.current_price;
 
-      if (bulkAdjustmentType === 'percentage') {
-        newPrice = item.current_price * (1 + bulkAdjustmentValue / 100);
-      } else {
-        newPrice = item.current_price + bulkAdjustmentValue;
-      }
+  //     if (bulkAdjustmentType === 'percentage') {
+  //       newPrice = item.current_price * (1 + bulkAdjustmentValue / 100);
+  //     } else {
+  //       newPrice = item.current_price + bulkAdjustmentValue;
+  //     }
 
-      newPrice = Math.round(newPrice);
+  //     newPrice = Math.round(newPrice);
 
-      newEditedPrices.set(item.id, {
-        id: item.id,
-        new_price: newPrice,
-        reason: `Bulk ${bulkAdjustmentType} adjustment of ${bulkAdjustmentValue}${bulkAdjustmentType === 'percentage' ? '%' : ''}`,
-      });
-      newEditingRows.add(item.id);
-    });
+  //     newEditedPrices.set(item.id, {
+  //       id: item.id,
+  //       new_price: newPrice,
+  //       reason: `Bulk ${bulkAdjustmentType} adjustment of ${bulkAdjustmentValue}${bulkAdjustmentType === 'percentage' ? '%' : ''}`,
+  //     });
+  //     newEditingRows.add(item.id);
+  //   });
 
-    setEditedPrices(newEditedPrices);
-    setEditingRows(newEditingRows);
-    setIsBulkModalOpen(false);
-    setSuccess(
-      `Bulk adjustment applied to ${filteredItems.length} items. Review and save changes.`,
-    );
-  };
+  //   setEditedPrices(newEditedPrices);
+  //   setEditingRows(newEditingRows);
+  //   setIsBulkModalOpen(false);
+  //   setSuccess(
+  //     `Bulk adjustment applied to ${filteredItems.length} items. Review and save changes.`,
+  //   );
+  // };
 
   // Table headers
   const headers = [
@@ -502,7 +502,7 @@ export const PriceListManagement = () => {
                   <TableToolbarSearch
                     persistent
                     placeholder='Search by item name, code, or category'
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e: any) => setSearchQuery(e.target.value)}
                     value={searchQuery}
                   />
                 </TableToolbarContent>
@@ -565,7 +565,7 @@ export const PriceListManagement = () => {
                                 value={displayPrice}
                                 min={0}
                                 step={100}
-                                onChange={(e, { value }) => {
+                                onChange={(_, { value }) => {
                                   if (value !== undefined && value !== '') {
                                     handlePriceChange(item.id, Number(value));
                                   }
@@ -705,11 +705,10 @@ export const PriceListManagement = () => {
                       {formatCurrency(edit.new_price)}
                     </span>
                     <span
-                      className={`price-list-modal__change-percent ${
-                        edit.new_price > item.current_price
-                          ? 'price-list-modal__change-percent--positive'
-                          : 'price-list-modal__change-percent--negative'
-                      }`}
+                      className={`price-list-modal__change-percent ${edit.new_price > item.current_price
+                        ? 'price-list-modal__change-percent--positive'
+                        : 'price-list-modal__change-percent--negative'
+                        }`}
                     >
                       (
                       {(

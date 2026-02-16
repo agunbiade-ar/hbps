@@ -9,7 +9,9 @@ export const facility_api = createApi({
     getFacility: builder.query({
       query: ({ id }) => `/facilities/${id}`,
       transformResponse: (response) => response,
-      providesTags: (result, error, arg) => [{ type: 'facility', id: arg.id }],
+      providesTags: (_result, _error, arg) => [
+        { type: 'facility', id: arg.id },
+      ],
     }),
   }),
 });

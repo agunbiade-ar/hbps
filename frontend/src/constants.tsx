@@ -1,11 +1,11 @@
 import {
-  Home,
+  // Home,
   Receipt,
   //   InventoryManagement,
   //   Medication,
-    IbmWatsonOrders,
+  IbmWatsonOrders,
   UserFollow,
-  Logout,
+  // Logout,
 } from '@carbon/icons-react';
 
 export const BACKEND_BASE_URL = 'http://localhost:8000';
@@ -42,9 +42,9 @@ export const navItems = [
     ],
   },
   {
-      "label": "Orders",
-      "link": "/orders",
-      "icon": <IbmWatsonOrders />
+    "label": "Orders",
+    "link": "/orders",
+    "icon": <IbmWatsonOrders />
   },
   // {
   //     "label": "Pharmacy",

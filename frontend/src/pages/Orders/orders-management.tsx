@@ -74,10 +74,10 @@ export const OrdersManagement = () => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       orders = orders.filter(
-        (order) =>
+        (order: any) =>
           order.patient_name.toLowerCase().includes(query) ||
           order.id.toString().includes(query) ||
-          order.items.some((item) =>
+          order.items.some((item: any) =>
             item.concept_name.toLowerCase().includes(query),
           ),
       );
@@ -185,7 +185,10 @@ export const OrdersManagement = () => {
       {/* Orders Table */}
       <div className='orders-management-table-container'>
         <DataTable
-          rows={paginatedOrders.map((order) => ({ ...order, id: order.id }))}
+          rows={paginatedOrders.map((order: any) => ({
+            ...order,
+            id: order.id,
+          }))}
           headers={headers}
         >
           {({
@@ -205,7 +208,7 @@ export const OrdersManagement = () => {
                   <TableToolbarSearch
                     persistent
                     placeholder='Search by patient name, order ID, or item...'
-                    onChange={(e) => {
+                    onChange={(e: any) => {
                       setSearchQuery(e.target.value);
                       setCurrentPage(1);
                     }}
@@ -231,12 +234,14 @@ export const OrdersManagement = () => {
                   {rows.length > 0 ? (
                     rows.map((row) => {
                       const patientOrder = paginatedOrders.find(
-                        (o) => o.id === row.id,
+                        (o: any) => o.id === row.id,
                       );
                       if (!patientOrder) return null;
 
                       const categories = [
-                        ...new Set(patientOrder.items.map((i) => i.category)),
+                        ...new Set(
+                          patientOrder.items.map((i: any) => i.category),
+                        ),
                       ];
 
                       return (
@@ -263,7 +268,7 @@ export const OrdersManagement = () => {
                           </TableCell> */}
                           <TableCell>
                             <div className='orders-management-table__categories'>
-                              {categories.map((cat) => (
+                              {categories.map((cat: any) => (
                                 <Tag key={cat} size='sm'>
                                   {getCategoryLabel(cat)}
                                 </Tag>

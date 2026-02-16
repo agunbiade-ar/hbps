@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     OPENMRS_BASE_URL: str = ""
     OPENMRS_USER: str = ""
     OPENMRS_USER_PASSWORD: str = ""
+    OPENMRS_DB_HOST: str = ""
     OPENMRS_DB_PORT: int = 0
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")

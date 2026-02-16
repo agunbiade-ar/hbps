@@ -24,7 +24,7 @@ export const bills_api = createApi({
     getBill: builder.query({
       query: ({ id }) => `/bills/${id}`,
       transformResponse: (response: any) => response,
-      providesTags: (result, error, arg) => [{ type: 'bills', id: arg.id }],
+      providesTags: (_result, _error, arg) => [{ type: 'bills', id: arg.id }],
     }),
     updateBill: builder.mutation({
       query: ({ id, body }) => ({
@@ -32,7 +32,7 @@ export const bills_api = createApi({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (result, error, arg) => [
+      invalidatesTags: (_result, _error, arg) => [
         { type: 'bills', id: arg.id }, // refetch this bill
         { type: 'bills', id: 'LIST' }, // refetch list
       ],
