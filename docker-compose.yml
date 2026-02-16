@@ -7,8 +7,10 @@ services:
     env_file:
       - ./backend/.env
     depends_on:
-      hayok_db:
+      hayokbps:
         condition: service_healthy
+    networks:
+      - openmrs-distro-referenceapplication_default
     restart: always
 
   worker:
@@ -18,10 +20,10 @@ services:
     env_file:
       - ./backend/.env
     depends_on:
-      hayok_db:
+      hayokbps:
         condition: service_healthy
-    extra_hosts:
-      - 'host.docker.internal:host-gateway'
+    networks:
+      - openmrs-distro-referenceapplication_default
     restart: always
 
   frontend:
@@ -31,9 +33,9 @@ services:
       - '3000:3000'
     restart: always
 
-  hayok_db:
+  hayokbps:
     image: mysql:8
-    container_name: hayok_db
+    container_name: hayokbps
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_ROOT_HOST: '%'
@@ -49,6 +51,12 @@ services:
       - mysql_data:/var/lib/mysql
       - ./backend/sql/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
     restart: always
+    networks:
+      - openmrs-distro-referenceapplication_default
 
 volumes:
   mysql_data:
+
+networks:
+  openmrs-distro-referenceapplication_default:
+    external: true
