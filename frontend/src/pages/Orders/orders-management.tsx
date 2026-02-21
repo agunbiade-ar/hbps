@@ -80,7 +80,7 @@ export const OrdersManagement = () => {
 
     return orders;
   }, [ordersQuery, searchQuery]);
-
+  console.log(filteredPatientOrders);
   // Pagination
   const paginatedOrders = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;

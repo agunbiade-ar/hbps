@@ -156,9 +156,16 @@ def insert_new_orders(target_db, rows, existing_visits_map):
     """
     new_orders = []
     for row in rows:
+        # print(row)
+        # sys.exit(1)
         if row["order_action"] != "NEW":
             continue
         billing_visit_id = existing_visits_map[row["visit_id"]]
+        duration = row.get("duration", None)
+        if duration is not None:
+            duration = str(duration)
+            duration += " " + row.get("duration_units")
+
         new_orders.append(
             (
                 billing_visit_id,
@@ -170,7 +177,7 @@ def insert_new_orders(target_db, rows, existing_visits_map):
                 row.get("dose"),
                 row.get("frequency"),
                 row.get("route"),
-                row.get("duration"),
+                duration,
             )
         )
 

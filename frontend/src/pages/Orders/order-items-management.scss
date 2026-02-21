@@ -914,3 +914,64 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     border-left: 2px solid $healthcare-neutral-900;
   }
 }
+
+.expandable-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(8, 107, 86, 0.04);
+  }
+}
+
+.drug-inline-detail {
+  padding: 1rem 1.5rem 1.25rem;
+  background: #f0f7f4;
+  border-top: 1px solid rgba(8, 107, 86, 0.15);
+
+  &__summary {
+    font-size: 0.9375rem;
+    color: #161616;
+    margin-bottom: 0.875rem;
+    padding: 0.625rem 0.875rem;
+    background: #fff;
+    border-left: 3px solid #086b56;
+    border-radius: 4px;
+    line-height: 1.6;
+  }
+
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+
+    div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+
+      span {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #525252;
+      }
+
+      strong {
+        font-size: 0.9375rem;
+        color: #161616;
+      }
+    }
+  }
+
+  &__missing {
+    font-size: 0.875rem;
+    color: #525252;
+    font-style: italic;
+  }
+}

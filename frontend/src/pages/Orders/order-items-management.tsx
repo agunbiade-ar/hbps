@@ -32,6 +32,11 @@ interface OrderItem {
   concept_uuid: string;
   drug_uuid: string;
   category: string;
+  frequency: string;
+  dose: string;
+  duration: string;
+  route: string;
+
   quantity: number;
   status: 'open' | 'billed' | 'paid' | 'dispensed';
   order_id: number;
@@ -95,6 +100,7 @@ export const OrderItemsManagement = () => {
   );
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   // Split items into two groups
   const openBilledItems = useMemo(() => {
     return (
@@ -424,51 +430,117 @@ export const OrderItemsManagement = () => {
                           if (!item) return null;
 
                           const canSelect = item.status === 'open';
+                          const isExpanded = expandedId === item.order_id;
+                          const isDrug = item.category.toLowerCase() === 'drug';
 
                           return (
-                            <TableRow
-                              {...getRowProps({ row })}
-                              key={row.id}
-                              className='order-items-table__row'
-                            >
-                              <TableCell>
-                                {canSelect ? (
-                                  <Checkbox
-                                    id={`open-${item.order_id}`}
-                                    labelText=''
-                                    checked={selectedOpenItems.has(
-                                      item.order_id,
-                                    )}
-                                    onChange={(e) =>
-                                      handleOpenItemToggle(
+                            <>
+                              {/* Main row */}
+                              <TableRow
+                                {...getRowProps({ row })}
+                                key={row.id}
+                                className={`order-items-table__row ${isDrug ? 'order-items-table__row--clickable' : ''}`}
+                                onClick={() =>
+                                  isDrug &&
+                                  setExpandedId(
+                                    isExpanded ? null : item.order_id,
+                                  )
+                                }
+                              >
+                                <TableCell onClick={(e) => e.stopPropagation()}>
+                                  {canSelect ? (
+                                    <Checkbox
+                                      id={`open-${item.order_id}`}
+                                      labelText=''
+                                      checked={selectedOpenItems.has(
                                         item.order_id,
-                                        e.target.checked,
-                                      )
-                                    }
-                                  />
-                                ) : (
-                                  <span className='order-items-table__disabled-checkbox'>
-                                    —
+                                      )}
+                                      onChange={(e) =>
+                                        handleOpenItemToggle(
+                                          item.order_id,
+                                          e.target.checked,
+                                        )
+                                      }
+                                    />
+                                  ) : (
+                                    <span className='order-items-table__disabled-checkbox'>
+                                      —
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className='order-items-table__item-name'>
+                                    {item.item_name}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Tag size='sm'>
+                                    {getCategoryLabel(item.category)}
+                                  </Tag>
+                                </TableCell>
+                                <TableCell>
+                                  <span className='order-items-table__quantity'>
+                                    {item.quantity}
                                   </span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div className='order-items-table__item-name'>
-                                  {item.item_name}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Tag size='sm'>
-                                  {getCategoryLabel(item.category)}
-                                </Tag>
-                              </TableCell>
-                              <TableCell>
-                                <span className='order-items-table__quantity'>
-                                  {item.quantity}
-                                </span>
-                              </TableCell>
-                              <TableCell>{getStatusTag(item.status)}</TableCell>
-                            </TableRow>
+                                </TableCell>
+                                <TableCell>
+                                  {getStatusTag(item.status)}
+                                </TableCell>
+                              </TableRow>
+
+                              {/* Expandable detail row — only renders for drug items when expanded */}
+                              {isExpanded && isDrug && (
+                                <TableRow key={`${row.id}-detail`}>
+                                  <TableCell
+                                    colSpan={headers.length}
+                                    style={{ padding: 0 }}
+                                  >
+                                    <div className='drug-inline-detail'>
+                                      {item ? (
+                                        <>
+                                          <div className='drug-inline-detail__grid'>
+                                            {item.dose !== undefined && (
+                                              <div>
+                                                <span>Dose</span>
+                                                <strong>{item.dose}</strong>
+                                              </div>
+                                            )}
+                                            {item.frequency && (
+                                              <div>
+                                                <span>Frequency</span>
+                                                <strong>
+                                                  {item.frequency}
+                                                </strong>
+                                              </div>
+                                            )}
+                                            {item.route && (
+                                              <div>
+                                                <span>Route</span>
+                                                <strong>{item.route}</strong>
+                                              </div>
+                                            )}
+                                            {item.duration !== undefined && (
+                                              <div>
+                                                <span>Duration</span>
+                                                <strong>{item.duration}</strong>
+                                              </div>
+                                            )}
+                                            <div>
+                                              <span>Qty</span>
+                                              <strong>{item.quantity}</strong>
+                                            </div>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <p className='drug-inline-detail__missing'>
+                                          No prescription details available.
+                                        </p>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </>
                           );
                         })
                       ) : (
