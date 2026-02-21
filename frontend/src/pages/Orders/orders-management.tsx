@@ -73,13 +73,8 @@ export const OrdersManagement = () => {
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      orders = orders.filter(
-        (order: any) =>
-          order.patient_name.toLowerCase().includes(query) ||
-          order.id.toString().includes(query) ||
-          order.items.some((item: any) =>
-            item.concept_name.toLowerCase().includes(query),
-          ),
+      orders = orders.filter((order: any) =>
+        order.patient_name.toLowerCase().includes(query),
       );
     }
 
