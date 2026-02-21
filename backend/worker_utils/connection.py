@@ -18,15 +18,19 @@ source_db_config = {
 target_db_config = {
     "database": os.getenv("BILLING_DB"),
     "password": os.getenv("BILLING_DB_PASSWORD"),
-    "host": os.getenv("BILLING_DB_HOST"),
+    "host": os.getenv("BILLING_DB_HOST_EXPOSED"),
     "user": os.getenv("BILLING_DB_USER"),
-    "port": os.getenv("BILLING_DB_PORT"),
+    "port": os.getenv("BILLING_DB_PORT_EXPOSED"),
 }
 
+# print(source_db_config)
+# print()
+# print(target_db_config)
 
-def get_connection(config_dict):
+
+def get_connection(config_dict):  
     try:
-        connection = mysql.connector.connect(**config_dict, autocommit=True)
+        connection = mysql.connector.connect(**config_dict, autocommit=True, use_pure=True)
         return connection
     except Error as e:
         print(f"Error connecting to MariaDB/MySQL: {e}")
@@ -42,7 +46,7 @@ def ensure_connection(config_dict):
     try:
         if db_connection is None or not db_connection.is_connected():
             print("Reconnecting to database...")
-            db_connection = mysql.connector.connect(**config_dict, autocommit=True)
+            db_connection = mysql.connector.connect(**config_dict, autocommit=True, use_pure=True)
             print("Reconnected successfully.")
         return db_connection
     except Error as e:

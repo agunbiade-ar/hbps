@@ -93,8 +93,7 @@ def transport_concepts_from_openmrsDB(source_db, target_db):
     insert_query = """
     INSERT INTO hayokbps.items (concept_uuid, item_name, category) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE
     item_name = VALUES(item_name),
-    category = VALUES(category),
-    base_price = VALUES(base_price);
+    category = VALUES(category);
     """
     # Prepare a list of tuples from your dictionary rows
 
@@ -111,14 +110,15 @@ def transport_concepts_from_openmrsDB(source_db, target_db):
         parts = concept["class_name"].split()
         first_word = parts[0].lower() if parts else ""
         category = CLASS_MAP.get(first_word, concept["class_name"])
-        data.append((concept["concept_uuid"], concept["name"], category))
+        data.append((concept["concept_uuid"], concept["name"], category, concept["concept_id"]))
 
     try:
         # Batch insert
-        cursor.executemany(insert_query, data)
+        insert_data = [row[:3] for row in data]
+        cursor.executemany(insert_query, insert_data)
 
         if data:
-            last_processed_id = data[-1][0]
+            last_processed_id = data[-1][3]
             update_last_processed_concept_id(
                 target_db=target_db, last_id=last_processed_id
             )
@@ -194,7 +194,7 @@ def insert_new_orders(target_db, rows, existing_visits_map):
     try:
         cursor.executemany(insert_query, new_orders)
         target_db.commit()
-        print(f"Inserted {len(new_orders)} new orders")
+        print(f"Inserted new orders")
     except Exception as e:
         target_db.rollback()
         print("Error inserting new orders:", e)
@@ -262,7 +262,7 @@ async def fetch_openmrs_drug_concepts():
 
             data = response.json()
             results = data["results"]
-
+            
             for item in results:
                 entry = build_catalog_entry(item)
                 entry["category"] = "drug"
@@ -292,8 +292,6 @@ def upsert_drug_concepts_catalog(entries: list, target_db):
             -- notice: no price here, never overwrite price on sync
     """
     for entry in entries:
-        # print(entry)
-        # sys.exit(1)
         drug_entries.append(
             (
                 entry.get("concept_uuid"),
@@ -305,9 +303,10 @@ def upsert_drug_concepts_catalog(entries: list, target_db):
             )
         )
     try:
-        target_db.cursor().executemany(query, drug_entries)
-        target_db.commit()
-        print(f"Added drug items successfully with length {len(drug_entries)}")
+        with target_db.cursor() as cursor:
+            cursor.executemany(query, drug_entries)
+            target_db.commit()
+            print(f"Added drug items successfully with length {len(drug_entries)}")
     except Exception as e:
         print(e)
         target_db.rollback()

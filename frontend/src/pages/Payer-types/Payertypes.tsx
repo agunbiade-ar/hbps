@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import React from 'react';
 import './payer-type-styles.scss';
 import {
   useGetPayerTypesQuery,
@@ -11,7 +12,7 @@ import {
 // Icons
 // =========================================================================
 const Icon = ({ name, size = 20 }: { name: string; size?: number }) => {
-  const icons: Record<string, JSX.Element> = {
+  const icons: Record<string, React.ReactElement> = {
     payer: (
       <svg
         width={size}

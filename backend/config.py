@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     BILLING_DB_HOST: str = ""
     BILLING_DB_PASSWORD: str = ""
     BILLING_DB_PORT: int = 0
+    BILLING_DB_HOST_EXPOSED: str = ""
+    BILLING_DB_PORT_EXPOSED: int = 0
     SECRET_KEY: str = ""
     ACCESS_TOKEN_EXPIRY_LENGTH: int = 0
     REFRESH_TOKEN_EXPIRY_LENGTH: int = 0

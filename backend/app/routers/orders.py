@@ -26,7 +26,7 @@ async def get_orders(
                 SELECT
                     bv.status AS billing_visit_status,
                     p.patient_name,
-                    p.patient_uuid AS patient_id,
+                    p.patient_uuid,
                     o.*,
                     i.item_name,
                     i.category
