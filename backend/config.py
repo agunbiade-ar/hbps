@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     OPENMRS_DB_USER: str = ""
     OPENMRS_DB_PASSWORD: str = ""
     OPENMRS_BASE_URL: str = ""
+    OPENMRS_BASE_URL_GATEWAY: str = ""
     OPENMRS_USER: str = ""
     OPENMRS_USER_PASSWORD: str = ""
     OPENMRS_DB_HOST: str = ""

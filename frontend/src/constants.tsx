@@ -8,7 +8,7 @@ import {
   // Logout,
 } from '@carbon/icons-react';
 
-export const BACKEND_BASE_URL = 'http://localhost:8000';
+export const BACKEND_BASE_URL = 'http://192.168.88.251:8000';
 
 export type User = {
   id: number;

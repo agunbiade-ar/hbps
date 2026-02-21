@@ -37,7 +37,7 @@ async def login(
     try:
         client = OpenMRSClient.get_client()
         response = await client.get(
-            f"{settings.OPENMRS_BASE_URL}/session",
+            f"{settings.OPENMRS_BASE_URL_GATEWAY}session",
             auth=(payload["username"], payload["password"]),
             headers={"Accept": "application/json"},
         )
