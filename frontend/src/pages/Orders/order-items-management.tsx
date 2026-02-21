@@ -23,13 +23,14 @@ import './order-items-management.scss';
 import {
   useUpdateOrderMutation,
   useGetBillingVisitQuery,
-  useGetPayerTypesQuery,
 } from '../../api/Orders';
+import { useGetPayerTypesQuery } from '../../api/Payers';
 
 interface OrderItem {
   id: number;
-  concept_name: string;
-  concept_id: number;
+  item_name: string;
+  concept_uuid: string;
+  drug_uuid: string;
   category: string;
   quantity: number;
   status: 'open' | 'billed' | 'paid' | 'dispensed';
@@ -39,7 +40,7 @@ interface OrderItem {
 interface OrderDetails {
   id: number;
   patient_name: string;
-  patient_id: number;
+  patient_uuid: string;
   status: string;
   items: OrderItem[];
 }
@@ -65,9 +66,14 @@ export const OrderItemsManagement = () => {
   // Get order data from navigation state
   // const orderDetails = location.state?.orderDetails as OrderDetails | undefined;
 
-  const orderDetailsQuery = useGetBillingVisitQuery({
-    id: Number(id),
-  });
+  const orderDetailsQuery = useGetBillingVisitQuery(
+    {
+      id: Number(id),
+    },
+    {
+      refetchOnMountOrArgChange: true,
+    },
+  );
 
   const orderDetails = useMemo(() => {
     const order: OrderDetails = orderDetailsQuery.data;
@@ -105,13 +111,6 @@ export const OrderItemsManagement = () => {
       ) || []
     );
   }, [orderDetails]);
-
-  // Redirect back if no order data
-  // useEffect(() => {
-  //   if (!orderDetails) {
-  //     navigate('/orders');
-  //   }
-  // }, [orderDetails, navigate]);
 
   // Show loading while redirecting
   if (!orderDetails) {
@@ -210,23 +209,19 @@ export const OrderItemsManagement = () => {
         const items = [];
         for (const i of orderDetails.items) {
           if (orderIds.includes(i.order_id)) {
-            items.push({
-              concept_name: i.concept_name,
-              concept_id: i.concept_id,
-              quantity: i.quantity,
-              order_id: i.order_id,
-              category: i.category,
-            });
+            items.push(i);
           }
         }
 
         const payload = {
           id: orderDetails.id,
-          patient_id: orderDetails.patient_id,
+          patient_uuid: orderDetails.patient_uuid,
           patient_name: orderDetails.patient_name,
           payer_id: selectedPayerType,
           items,
         };
+
+        console.log(payload);
         // await updateOrderItems({ order_ids: orderIds, status: 'billed' }).unwrap();
 
         try {
@@ -245,10 +240,6 @@ export const OrderItemsManagement = () => {
       } else if (actionType === 'dispense') {
         const orderIds = Array.from(selectedPaidItems);
         console.log('Marking as dispensed (order_ids):', orderIds);
-
-        // await updateOrders({
-        //   id: orderDetails.id,
-        // }).unwrap();
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
         setSuccess(
@@ -463,7 +454,7 @@ export const OrderItemsManagement = () => {
                               </TableCell>
                               <TableCell>
                                 <div className='order-items-table__item-name'>
-                                  {item.concept_name}
+                                  {item.item_name}
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -641,7 +632,7 @@ export const OrderItemsManagement = () => {
                               </TableCell>
                               <TableCell>
                                 <div className='order-items-table__item-name'>
-                                  {item.concept_name}
+                                  {item.item_name}
                                 </div>
                               </TableCell>
                               <TableCell>

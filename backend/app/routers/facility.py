@@ -1,4 +1,4 @@
-from fastapi import status, HTTPException, APIRouter, Depends, Query
+from fastapi import status, HTTPException, APIRouter, Depends
 from utils.utils import set_logger
 from db_conn import async_get_db_connection
 from aiomysql import Error as aiomysqlError
@@ -19,8 +19,9 @@ async def get_facilities(
         try:
             query = """SELECT * FROM hayokbps.facility WHERE id = 1"""
             await cursor.execute(query)
-            facilities = await cursor.fetchone()
-            return facilities
+            facility = await cursor.fetchone()
+            # print(facility)
+            return facility
         except HTTPException as e:
             raise e
         except aiomysqlError as e:

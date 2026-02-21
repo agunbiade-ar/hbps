@@ -1,6 +1,7 @@
 backend/venv
 backend/*.env
 backend/__pycache__
+backend/app/routers/__pycache__
 # Logs
 frontend/logs
 frontend/*.log

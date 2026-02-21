@@ -12,6 +12,8 @@ import { payments_api } from '../api/Payments';
 import { orders_api } from '../api/Orders';
 import { facility_api } from '../api/Facility';
 import { users_api } from '../api/Users';
+import { items_api } from '../api/Items';
+import { payers_api } from '../api/Payers';
 
 const persistConfig = {
   key: 'root',
@@ -26,6 +28,8 @@ const rootReducer = combineReducers({
   [orders_api.reducerPath]: orders_api.reducer,
   [facility_api.reducerPath]: facility_api.reducer,
   [users_api.reducerPath]: users_api.reducer,
+  [items_api.reducerPath]: items_api.reducer,
+  [payers_api.reducerPath]: payers_api.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -42,6 +46,8 @@ export const store = configureStore({
       orders_api.middleware,
       facility_api.middleware,
       users_api.middleware,
+      items_api.middleware,
+      payers_api.middleware,
     ]),
 });
 

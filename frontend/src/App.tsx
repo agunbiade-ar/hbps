@@ -21,6 +21,7 @@ import { RegisterUser } from './pages/Users/RegisterUser.tsx';
 import { PriceListManagement } from './pages/Pricing/PriceList.tsx';
 import { OrdersManagement } from './pages/Orders/orders-management.tsx';
 import { OrderItemsManagement } from './pages/Orders/order-items-management.tsx';
+import { PayerTypeManagement } from './pages/Payer-types/Payertypes.tsx';
 
 function App() {
   const dispatch = useAppDispatch();
@@ -84,6 +85,7 @@ function App() {
             <Route path='bills/:id' element={<BillDetailApproval />} />
             <Route path='payments' element={<PaymentsList />} />
             <Route path='price-management' element={<PriceListManagement />} />
+            <Route path='payer-types' element={<PayerTypeManagement />} />
           </Route>
         </Route>
       </Route>

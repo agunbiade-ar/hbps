@@ -9,8 +9,6 @@ services:
     depends_on:
       hayokbps:
         condition: service_healthy
-    networks:
-      - openmrs-distro-referenceapplication_default
     restart: always
 
   worker:
@@ -22,8 +20,6 @@ services:
     depends_on:
       hayokbps:
         condition: service_healthy
-    networks:
-      - openmrs-distro-referenceapplication_default
     restart: always
 
   frontend:
@@ -51,12 +47,6 @@ services:
       - mysql_data:/var/lib/mysql
       - ./backend/sql/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
     restart: always
-    networks:
-      - openmrs-distro-referenceapplication_default
 
 volumes:
   mysql_data:
-
-networks:
-  openmrs-distro-referenceapplication_default:
-    external: true

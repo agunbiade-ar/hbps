@@ -1,8 +1,15 @@
-import time
 from dotenv import load_dotenv
 
+from .concepts import (
+    # get_openmrs_drug_concepts,
+    ensure_visit_exists,
+    # insert_dose_specific_item,
+    insert_new_orders,
+    cancel_discontinued_orders,
+    fetch_openmrs_drug_concepts,
+    upsert_drug_concepts_catalog,
+)
 from .last_processed import (
-    get_last_processed_order_id,
     get_last_processed_patient_id,
     update_last_processed_order_id,
     update_last_processed_patient_id,
@@ -35,134 +42,22 @@ def fetch_existing_billing_visits(visit_ids, cursor):
     return results
 
 
-def poll_orders(source_db, target_db):
-    """
-    Polls OpenMRS orders and inserts them into our billing system.
-    Groups orders by visit using billing_visits table.
-    This version prevents assigning orders to the wrong patient.
-    """
-    source_cursor = source_db.cursor(dictionary=True, buffered=True)
-    target_cursor = target_db.cursor(dictionary=True, buffered=True)
-
-    last_processed_id = get_last_processed_order_id(target_db)
-
-    try:
-        query = """
-            SELECT
-                o.order_id,
-                o.encounter_id,
-                o.patient_id,
-                o.concept_id,
-                (SELECT cn.name FROM concept_name cn 
-                    WHERE cn.concept_id = o.concept_id 
-                    AND cn.locale = 'en'
-                    AND cn.concept_name_type = 'FULLY_SPECIFIED'
-                    AND cn.voided = 0
-                    LIMIT 1) AS concept_name,
-                ot.name AS order_type,
-                e.visit_id,
-                o.order_action,  -- Add this to see the action
-                COALESCE(
-                    (SELECT MIN(quantity) FROM drug_order WHERE order_id = o.order_id LIMIT 1),
-                    1
-                ) AS quantity
-            FROM orders o
-            JOIN order_type ot ON ot.order_type_id = o.order_type_id AND ot.retired = 0
-            JOIN encounter e ON e.encounter_id = o.encounter_id
-            WHERE o.order_id > %s
-                AND o.voided = 0
-                AND o.order_action = 'NEW'  -- Only NEW orders, not DISCONTINUE orders
-            ORDER BY o.order_id ASC
-        """
-        source_cursor.execute(query, (last_processed_id,))
-
-        total_processed = 0
-        while True:
-            rows = source_cursor.fetchmany(100)
-            if not rows:
-                break
-
-            order_ids = [row["order_id"] for row in rows]
-            if len(order_ids) != len(set(order_ids)):
-                print("WARNING: Duplicate order_ids detected in batch!")
-                for oid in set(order_ids):
-                    count = order_ids.count(oid)
-                    if count > 1:
-                        print(f"  order_id {oid} appears {count} times")
-                        break
-
-            # Get all visit_ids from current batch
-            visit_ids = list(
-                set(row["visit_id"] for row in rows if row["visit_id"] is not None)
-            )
-
-            # Fetch existing billing_visits
-            existing_visits = fetch_existing_billing_visits(visit_ids, target_cursor)
-            existing_visits_map = {v["visit_id"]: v["id"] for v in existing_visits}
-
-            # Insert missing visits
-            for visit_id in visit_ids:
-                if visit_id not in existing_visits_map:
-                    # Pick the patient_id from any row that has this visit_id
-                    patient_id = next(
-                        row["patient_id"] for row in rows if row["visit_id"] == visit_id
-                    )
-                    insert_visit_query = """
-                        INSERT INTO hayokbps.billing_visits (visit_id, patient_id)
-                        VALUES (%s, %s)
-                    """
-                    target_cursor.execute(insert_visit_query, (visit_id, patient_id))
-                    existing_visits_map[visit_id] = target_cursor.lastrowid
-
-            # Prepare orders batch: each row keeps its patient_id
-            batch = [
-                (
-                    existing_visits_map.get(row["visit_id"]),  # billing_visit_id
-                    row["order_id"],
-                    row["patient_id"],
-                    row["concept_id"],
-                    row.get("quantity") or 1,
-                )
-                for row in rows
-            ]
-
-            # Insert orders with duplicate protection
-            insert_order_query = """
-                INSERT IGNORE INTO hayokbps.orders 
-                (billing_visit_id, order_id, patient_id, concept_id, quantity)
-                VALUES (%s, %s, %s, %s, %s)
-            """
-            target_cursor.executemany(insert_order_query, batch)
-
-            last_processed_id = rows[-1]["order_id"]
-            total_processed += len(batch)
-
-        # Commit once after all batches
-        if total_processed > 0:
-            update_last_processed_order_id(target_db, last_processed_id)
-            target_db.commit()
-            print(f"Processed {total_processed} orders. Last ID: {last_processed_id}")
-        else:
-            print("No new orders to process")
-
-    except Exception as e:
-        target_db.rollback()
-        print(f"Error in poll_orders: {e}")
-        raise
-
-
 def poll_for_patients(source_db, target_db):
     fetch_patients_query = """
-                            SELECT
-                            p.patient_id,
-                            pn.given_name,
-                            pn.middle_name,
-                            pn.family_name
-                        FROM patient p
-                        JOIN person_name pn ON p.patient_id = pn.person_id
-                        WHERE pn.voided = 0
-                        AND p.patient_id > %s
-                        ORDER BY p.patient_id ASC"""
+        SELECT
+            p.patient_id,
+            per.uuid AS patient_uuid,
+            pn.given_name,
+            pn.middle_name,
+            pn.family_name
+        FROM patient p
+        JOIN person per ON per.person_id = p.patient_id
+        JOIN person_name pn ON pn.person_id = p.patient_id
+        WHERE pn.voided = 0
+        AND pn.preferred = 1
+        AND p.patient_id > %s
+        ORDER BY p.patient_id ASC
+        """
 
     source_cursor = source_db.cursor(dictionary=True, buffered=True)
     last_processed_id = get_last_processed_patient_id(target_db=target_db)
@@ -175,17 +70,17 @@ def poll_for_patients(source_db, target_db):
         if rows:
             batch = []
             for patient in rows:
-                patient_id = patient.get("patient_id")  # type: ignore
+                patient_uuid = patient.get("patient_uuid")  # type: ignore
                 first_name = patient.get("given_name")  # type: ignore
                 last_name = patient.get("family_name")  # type: ignore
                 middle_name = patient.get("middle_name", None)  # type: ignore
 
                 patient_name = f"{first_name} {middle_name or ''} {last_name}".strip()
 
-                batch.append((patient_id, patient_name))
-                last_processed_id = patient_id
+                batch.append((patient_uuid, patient_name))
+                last_processed_id = patient.get("patient_id")
 
-            query = """INSERT INTO hayokbps.billing_patients (patient_id, patient_name) VALUES (%s, %s)
+            query = """INSERT INTO hayokbps.billing_patients (patient_uuid, patient_name) VALUES (%s, %s)
                     ON DUPLICATE KEY UPDATE patient_name = VALUES(patient_name)"""
             target_cursor.executemany(query, batch)
 
@@ -196,3 +91,122 @@ def poll_for_patients(source_db, target_db):
     except Exception as e:
         target_db.rollback()
         print("patients batch insertion failed: ", e)
+
+
+def poll_orders(source_db, target_db, last_processed_id):
+    source_cursor = source_db.cursor(dictionary=True, buffered=True)
+    target_cursor = target_db.cursor(dictionary=True, buffered=True)
+
+    try:
+        query = """
+            SELECT
+                o.uuid AS order_uuid,
+                o.order_id,
+                o.encounter_id,
+                o.patient_id,
+                p.uuid AS patient_uuid,
+                pn.given_name,
+                pn.family_name,
+                c.uuid AS concept_uuid,
+                d.uuid AS drug_uuid,
+                d.name AS drug_name,                        -- human-readable drug name
+                do.dose,
+                dose_units_cn.name AS dose_units,           -- e.g. "mg", "ml"
+                freq_cn.name AS frequency,                  -- e.g. "Once daily"
+                route_cn.name AS route,                     -- e.g. "Oral"
+                do.duration,
+                duration_units_cn.name AS duration_units,   -- e.g. "Days"
+                do.quantity,
+                o.order_action,
+                v.visit_id
+            FROM orders o
+            LEFT JOIN concept c ON c.concept_id = o.concept_id
+            LEFT JOIN drug_order do ON do.order_id = o.order_id
+            LEFT JOIN drug d ON d.drug_id = do.drug_inventory_id
+
+            -- Decode dose_units
+            LEFT JOIN concept_name dose_units_cn 
+                ON dose_units_cn.concept_id = do.dose_units
+                AND dose_units_cn.locale = 'en'
+                AND dose_units_cn.concept_name_type = 'FULLY_SPECIFIED'
+                AND dose_units_cn.voided = 0
+
+            -- Decode route
+            LEFT JOIN concept_name route_cn 
+                ON route_cn.concept_id = do.route
+                AND route_cn.locale = 'en'
+                AND route_cn.concept_name_type = 'FULLY_SPECIFIED'
+                AND route_cn.voided = 0
+
+            -- Decode duration_units
+            LEFT JOIN concept_name duration_units_cn 
+                ON duration_units_cn.concept_id = do.duration_units
+                AND duration_units_cn.locale = 'en'
+                AND duration_units_cn.concept_name_type = 'FULLY_SPECIFIED'
+                AND duration_units_cn.voided = 0
+
+            -- Decode frequency via order_frequency
+            LEFT JOIN order_frequency of ON of.order_frequency_id = do.frequency
+            LEFT JOIN concept_name freq_cn 
+                ON freq_cn.concept_id = of.concept_id
+                AND freq_cn.locale = 'en'
+                AND freq_cn.concept_name_type = 'FULLY_SPECIFIED'
+                AND freq_cn.voided = 0
+
+            JOIN encounter e ON e.encounter_id = o.encounter_id
+            JOIN visit v ON v.visit_id = e.visit_id
+            JOIN person p ON p.person_id = o.patient_id
+            LEFT JOIN person_name pn 
+                ON pn.person_id = p.person_id
+                AND pn.voided = 0
+                AND pn.preferred = 1
+            WHERE o.order_id > %s
+            AND o.voided = 0
+            AND o.order_action IN ('NEW', 'DISCONTINUE')
+            ORDER BY o.order_id ASC
+        """
+
+        source_cursor.execute(query, (last_processed_id,))
+        total_processed = 0
+
+        while True:
+            rows = source_cursor.fetchmany(100)
+            if not rows:
+                break
+
+            # Prepare visit map
+            visit_ids = list(
+                set(row["visit_id"] for row in rows if row["visit_id"] is not None)
+            )
+
+            existing_visits = {}
+            for visit_id in visit_ids:
+                patient_uuid = next(
+                    row["patient_uuid"] for row in rows if row["visit_id"] == visit_id
+                )
+
+                existing_visits[visit_id] = ensure_visit_exists(
+                    target_cursor, visit_id, patient_uuid
+                )
+
+            insert_new_orders(target_db, rows, existing_visits)
+
+            cancel_discontinued_orders(target_db, rows)
+
+            last_processed_id = rows[-1]["order_id"]
+            update_last_processed_order_id(target_db, last_processed_id)
+
+            total_processed += len(rows)
+
+        print(f"Processed {total_processed} orders")
+        return last_processed_id
+
+    except Exception as e:
+        target_db.rollback()
+        print("Error in poll_orders:", e)
+        raise
+
+
+async def poll_drugs(target_db):
+    drug_list = await fetch_openmrs_drug_concepts()
+    upsert_drug_concepts_catalog(drug_list, target_db)

@@ -70,17 +70,6 @@ export const orders_api = createApi({
         }
       },
     }),
-    getPayerTypes: builder.query({
-      query: (args) => {
-        const params: Record<string, any> = {};
-        if (args.payer_id) params['payer_id'] = args.payer_id;
-        return {
-          url: '/orders/payers',
-          params,
-        };
-      },
-      transformResponse: (response) => response,
-    }),
   }),
 });
 
@@ -88,5 +77,4 @@ export const {
   useGetAllBillingVisitsQuery,
   useGetBillingVisitQuery,
   useUpdateOrderMutation,
-  useGetPayerTypesQuery,
 } = orders_api;

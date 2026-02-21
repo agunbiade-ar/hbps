@@ -22,7 +22,7 @@ async def get_all_bills(
         async with connection.cursor() as cursor:
             query = """SELECT bp.patient_name, bill.* FROM hayokbps.bill 
                 JOIN hayokbps.billing_patients bp 
-                ON bp.patient_id = bill.patient_id
+                ON bp.id = bill.patient_id
                 ORDER BY id DESC LIMIT %s OFFSET %s"""
             await cursor.execute(query, (limit, offset))
             bills = await cursor.fetchall()
@@ -53,7 +53,7 @@ async def get_bill(
             bi.id AS bill_item_id, bi.payment_status AS bill_item_status,
             b.*,
             bi.* FROM hayokbps.bill b
-            JOIN hayokbps.billing_patients bp ON bp.patient_id = b.patient_id
+            JOIN hayokbps.billing_patients bp ON bp.id = b.patient_id
             JOIN hayokbps.bill_items bi ON bi.bill_id = b.id
             WHERE b.id = %s"""
             await cursor.execute(query, (bill_id,))

@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from sqlmodel import SQLModel
 from uuid import UUID
+from decimal import Decimal
 
 
 class UserRegisterSchema(BaseModel):
@@ -34,16 +35,17 @@ class BillUpdateRequest(BaseModel):
 
 
 class OrderItem(BaseModel):
-    concept_name: str
-    concept_id: int
+    item_name: str
+    concept_uuid: str
+    item_id: int
     category: str
     quantity: int
-    order_id: int
+    order_id: UUID
 
 
 class OrderPayload(BaseModel):
     id: int
-    patient_id: int
+    patient_uuid: UUID
     payer_id: int
     patient_name: str
     items: List[OrderItem]
@@ -55,3 +57,14 @@ class Facility(BaseModel):
     facility_uuid: str
     state: str
     phone_no: str
+
+
+class PayerType(BaseModel):
+    payer_code: str
+    payer_name: str
+
+
+class PriceEdit(BaseModel):
+    payer_id: int
+    item_id: int
+    price: Decimal

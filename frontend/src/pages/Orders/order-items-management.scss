@@ -19,6 +19,7 @@ $healthcare-white: #ffffff;
 $shadow-soft: 0 2px 8px rgba(8, 107, 86, 0.08);
 $shadow-medium: 0 4px 16px rgba(8, 107, 86, 0.12);
 $shadow-large: 0 8px 32px rgba(8, 107, 86, 0.16);
+$shadow-panel: -8px 0 40px rgba(8, 107, 86, 0.18);
 
 // Animation
 $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -133,7 +134,6 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   &:nth-child(3) {
     animation-delay: 0.1s;
   }
-
   &:nth-child(4) {
     animation-delay: 0.2s;
   }
@@ -226,14 +226,13 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     .cds--checkbox-wrapper {
       margin: 0;
     }
-
     .cds--checkbox-label {
       padding-left: 0;
     }
   }
 }
 
-// Table
+// Table rows
 .order-items-table {
   &__row {
     position: relative;
@@ -254,6 +253,24 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     &:hover::after {
       height: 60%;
     }
+
+    // Drug rows are clickable
+    &--drug {
+      cursor: pointer;
+
+      &::after {
+        background: $healthcare-secondary;
+      }
+
+      &:hover {
+        background: rgba(36, 161, 72, 0.06) !important;
+
+        .order-items-table__drug-hint {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+    }
   }
 
   &__disabled-checkbox {
@@ -267,6 +284,27 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   &__item-name {
     font-weight: 600;
     color: $healthcare-neutral-900;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__drug-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: $healthcare-primary;
+    background: $healthcare-primary-lighter;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    opacity: 0;
+    transform: translateX(-4px);
+    transition:
+      opacity 0.2s $ease-smooth,
+      transform 0.2s $ease-smooth;
   }
 
   &__quantity {
@@ -334,19 +372,349 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
-// Error state
-.order-items-error {
-  padding: 2rem;
+// ============================================================
+// DRUG DETAIL PANEL
+// ============================================================
 
-  :global(.cds--inline-notification) {
+// Backdrop
+.drug-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(22, 22, 22, 0);
+  z-index: 1000;
+  pointer-events: none;
+  transition: background 0.3s $ease-smooth;
+
+  &--visible {
+    background: rgba(22, 22, 22, 0.4);
+    pointer-events: all;
+  }
+}
+
+// Side panel
+.drug-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  max-width: 100vw;
+  height: 100vh;
+  background: $healthcare-white;
+  box-shadow: $shadow-panel;
+  z-index: 1001;
+  transform: translateX(100%);
+  transition: transform 0.35s $ease-smooth;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &--open {
+    transform: translateX(0);
+  }
+
+  @media (max-width: 480px) {
+    width: 100vw;
+  }
+
+  // Panel Header
+  &__header {
+    background: linear-gradient(
+      135deg,
+      $healthcare-primary 0%,
+      $healthcare-primary-light 100%
+    );
+    padding: 1.5rem;
+    flex-shrink: 0;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(
+        90deg,
+        $healthcare-secondary,
+        $healthcare-accent,
+        transparent
+      );
+    }
+  }
+
+  &__header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  &__pill-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: $healthcare-white;
+    backdrop-filter: blur(4px);
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
     border-radius: 8px;
-    box-shadow: $shadow-soft;
+    color: $healthcare-white;
+    cursor: pointer;
+    transition: background 0.2s $ease-smooth;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  &__drug-name {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: $healthcare-white;
+    line-height: 1.3;
+    margin-bottom: 0.75rem;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  &__header-tags {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+
+    :global(.cds--tag) {
+      background: rgba(255, 255, 255, 0.2) !important;
+      color: $healthcare-white !important;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  // Panel Body
+  &__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+
+    // Custom scrollbar
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    &::-webkit-scrollbar-track {
+      background: $healthcare-neutral-100;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: $healthcare-neutral-300;
+      border-radius: 4px;
+    }
+  }
+
+  // Instructions Banner
+  &__instructions-banner {
+    background: linear-gradient(
+      135deg,
+      $healthcare-primary-lighter 0%,
+      rgba(212, 237, 231, 0.5) 100%
+    );
+    border: 1px solid rgba(8, 107, 86, 0.15);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid $healthcare-primary;
+  }
+
+  &__instructions-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: $healthcare-primary;
+    margin-bottom: 0.375rem;
+  }
+
+  &__instructions-summary {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $healthcare-neutral-900;
+    line-height: 1.5;
+  }
+
+  // Cards Grid
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__card {
+    background: $healthcare-neutral-100;
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    border: 1px solid $healthcare-neutral-200;
+    transition: box-shadow 0.2s $ease-smooth;
+
+    &:hover {
+      box-shadow: $shadow-soft;
+    }
+  }
+
+  &__card-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    &--dose {
+      background: rgba(8, 107, 86, 0.1);
+      color: $healthcare-primary;
+    }
+    &--frequency {
+      background: rgba(15, 147, 112, 0.1);
+      color: $healthcare-primary-light;
+    }
+    &--route {
+      background: rgba(36, 161, 72, 0.1);
+      color: $healthcare-secondary;
+    }
+    &--duration {
+      background: rgba(66, 190, 101, 0.1);
+      color: $healthcare-accent;
+    }
+    &--quantity {
+      background: rgba(15, 98, 254, 0.08);
+      color: $healthcare-info;
+    }
+  }
+
+  &__card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  &__card-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: $healthcare-neutral-700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__card-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: $healthcare-neutral-900;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__card-unit {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: $healthcare-neutral-700;
+  }
+
+  // Summary Table
+  &__summary-table {
+    border: 1px solid $healthcare-neutral-200;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  &__summary-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $healthcare-neutral-900;
+    padding: 0.875rem 1.25rem;
+    background: $healthcare-neutral-100;
+    border-bottom: 1px solid $healthcare-neutral-200;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  &__table-row {
+    &:not(:last-child) {
+      border-bottom: 1px solid $healthcare-neutral-200;
+    }
+
+    &:hover {
+      background: rgba(8, 107, 86, 0.02);
+    }
+  }
+
+  &__table-label {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: $healthcare-neutral-700;
+    width: 45%;
+    vertical-align: middle;
+  }
+
+  &__table-value {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $healthcare-neutral-900;
+    vertical-align: middle;
+  }
+
+  // No details state
+  &__no-details {
+    text-align: center;
+    padding: 2rem;
+    background: $healthcare-neutral-100;
+    border-radius: 10px;
+    border: 1px dashed $healthcare-neutral-300;
+
+    p {
+      font-size: 0.9375rem;
+      color: $healthcare-neutral-700;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  &__no-details-hint {
+    font-size: 0.8125rem;
+    color: $healthcare-neutral-300;
+    font-style: italic;
   }
 }
 
 // Global button overrides
 :global {
-  // Primary button styling
   .cds--btn--primary {
     border-radius: 8px;
     background: linear-gradient(
@@ -382,7 +750,6 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
-  // Secondary button styling
   .cds--btn--secondary {
     border-radius: 8px;
     border: 1.5px solid $healthcare-primary;
@@ -402,7 +769,6 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
-  // Checkbox styling
   .cds--checkbox-wrapper {
     .cds--checkbox-label {
       &::before {
@@ -410,7 +776,6 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
         border-radius: 4px;
         transition: all 0.2s $ease-smooth;
       }
-
       &:hover::before {
         border-color: $healthcare-primary;
       }
@@ -421,7 +786,6 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
         background-color: $healthcare-primary;
         border-color: $healthcare-primary;
       }
-
       &::after {
         border-bottom-color: $healthcare-white;
         border-left-color: $healthcare-white;
@@ -436,7 +800,6 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
-  // Tag styling
   .cds--tag {
     border-radius: 6px;
     font-weight: 500;
@@ -450,7 +813,6 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
-  // Modal styling
   .cds--modal {
     .cds--modal-container {
       border-radius: 12px;
@@ -468,10 +830,8 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
         font-size: 1.25rem;
       }
 
-      .cds--modal-close {
-        &:hover {
-          background: rgba(8, 107, 86, 0.1);
-        }
+      .cds--modal-close:hover {
+        background: rgba(8, 107, 86, 0.1);
       }
     }
 
@@ -488,23 +848,19 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
-// Responsive adjustments
+// Responsive
 @media (max-width: 768px) {
-  .order-items-header {
-    &__meta {
-      flex-direction: column;
-      gap: 0.5rem;
-    }
+  .order-items-header__meta {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
-  .order-items-section {
-    &__header {
-      flex-direction: column;
-      align-items: stretch;
+  .order-items-section__header {
+    flex-direction: column;
+    align-items: stretch;
 
-      :global(.cds--btn) {
-        width: 100%;
-      }
+    :global(.cds--btn) {
+      width: 100%;
     }
   }
 
@@ -521,7 +877,7 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
-// Accessibility - reduced motion
+// Accessibility
 @media (prefers-reduced-motion: reduce) {
   .order-items-container,
   .order-items-header,
@@ -537,26 +893,24 @@ $ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   :global(.cds--btn--secondary):hover {
     transform: none;
   }
+
+  .drug-panel {
+    transition: none;
+  }
+
+  .drug-panel-backdrop {
+    transition: none;
+  }
 }
 
-// High contrast mode
+// High contrast
 @media (prefers-contrast: high) {
   .order-items-table-container,
   .order-items-header__info {
     border: 2px solid $healthcare-neutral-900;
   }
 
-  .order-items-table-wrapper {
-    :global {
-      .cds--data-table {
-        thead {
-          border-bottom: 3px solid $healthcare-neutral-900;
-        }
-
-        tbody tr td {
-          border-bottom: 2px solid $healthcare-neutral-900;
-        }
-      }
-    }
+  .drug-panel {
+    border-left: 2px solid $healthcare-neutral-900;
   }
 }

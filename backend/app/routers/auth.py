@@ -15,7 +15,6 @@ from utils.security_utils import (
 from db_conn import async_get_db_connection
 from app.models.models import Token, UserRegisterSchema
 from aiomysql import Error as aiomysqlError
-import time
 
 # from datetime import datetime, timezone, timedelta
 
@@ -44,7 +43,7 @@ async def login(
         )
 
         if response.status_code == 401:
-            logger.warning(f"Authentication failed, invalid credentials provided")
+            logger.warning("Authentication failed, invalid credentials provided")
             raise HTTPException(status_code=401, detail="invalid credentials")
 
         response.raise_for_status()
@@ -52,7 +51,7 @@ async def login(
 
         authenticated = response_payload.get("authenticated")
         if authenticated is None or authenticated is False:
-            logger.warning(f"Authentication failed, please login again")
+            logger.warning("Authentication failed, please login again")
             raise HTTPException(status_code=401, detail="invalid credentials")
 
         user_uuid = response_payload.get("user").get("uuid")

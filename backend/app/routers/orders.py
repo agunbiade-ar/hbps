@@ -22,23 +22,32 @@ async def get_orders(
 ):
     try:
         async with connection.cursor() as cursor:
-            query = """SELECT bv.status AS billing_visit_status, p.patient_name, p.patient_id AS patient_id, o.*, i.concept_name, i.category
-                    FROM hayokbps.orders o
-                    JOIN hayokbps.items i ON o.concept_id = i.concept_id
-                    LEFT JOIN hayokbps.billing_patients p on p.patient_id = o.patient_id
-                    LEFT JOIN hayokbps.billing_visits bv on bv.id = o.billing_visit_id
-                    ORDER BY o.billing_visit_id DESC LIMIT %s OFFSET %s
-                    """
+            query = """
+                SELECT
+                    bv.status AS billing_visit_status,
+                    p.patient_name,
+                    p.patient_uuid AS patient_id,
+                    o.*,
+                    i.item_name,
+                    i.category
+                FROM hayokbps.orders o
+                JOIN hayokbps.items i ON o.concept_uuid = i.concept_uuid
+                LEFT JOIN hayokbps.billing_patients p ON p.patient_uuid = o.patient_uuid
+                LEFT JOIN hayokbps.billing_visits bv ON bv.id = o.billing_visit_id
+                ORDER BY o.billing_visit_id DESC
+                LIMIT %s OFFSET %s
+            """
 
             await cursor.execute(query, (limit, offset))
             orders = await cursor.fetchall()
-
+            # print(orders)
             if orders is None:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="error when fetching orders from db",
                 )
 
+            # Group orders by billing_visit_id
             fetched_orders = {}
             for row in orders:
                 billing_visit_id = row.get("billing_visit_id")
@@ -46,27 +55,40 @@ async def get_orders(
                 if billing_visit_id not in fetched_orders:
                     fetched_orders[billing_visit_id] = {
                         "id": billing_visit_id,
-                        "patient_id": row["patient_id"],
+                        "patient_id": row["patient_uuid"],
                         "status": row["billing_visit_status"],
                         "patient_name": row["patient_name"],
                         "items": [],
                     }
 
-                if row.get("order_id"):
+                if row.get("order_uuid"):
                     fetched_orders[billing_visit_id]["items"].append(
                         {
-                            "order_id": row["order_id"],
-                            "concept_name": row["concept_name"],
-                            "concept_id": row["concept_id"],
+                            "order_id": row["order_uuid"],
+                            "item_name": row["item_name"],
+                            "concept_id": row["concept_uuid"],
                             "category": row["category"],
                             "quantity": row["quantity"],
                             "status": row["status"],
+                            "drug_id": row.get("drug_uuid"),
+                            "dose": float(row["dose"])
+                            if row["dose"] is not None
+                            else None,
+                            "dose_units": row.get("dose_units"),
+                            "frequency": row.get("frequency"),
+                            "route": row.get("route"),
+                            "duration": row.get("duration"),
+                            "duration_units": row.get("duration_units"),
                         }
                     )
 
-            order_length = len(fetched_orders)
-            fetched_orders = list(fetched_orders.values())
-            return {"orders": fetched_orders, "total_items": order_length}
+            # Convert dict to list for response
+            fetched_orders_list = list(fetched_orders.values())
+            return {
+                "orders": fetched_orders_list,
+                "total_items": len(fetched_orders_list),
+            }
+
     except aiomysqlError as e:
         logger.error(f"Database error when fetching orders: {e}")
         raise HTTPException(
@@ -74,38 +96,7 @@ async def get_orders(
             detail="failed to retrieve orders from database",
         )
     except Exception as e:
-        logger.error(f"unexpected error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="unexpected error",
-        )
-
-
-@router.get("/payers")
-async def get_payer_types(
-    payer_id: int = Query(default=None),
-    current_user=Depends(get_current_user),
-    connection=Depends(async_get_db_connection),
-):
-    try:
-        async with connection.cursor() as cursor:
-            if payer_id is None:
-                query = """SELECT * FROM hayokbps.payer_type"""
-                await cursor.execute(query)
-            else:
-                query = """SELECT * FROM hayokbps.payer_type WHERE id = %s"""
-                await cursor.execute(query, (payer_id,))
-
-            payer_types = await cursor.fetchall()
-            return {"payer_types": payer_types, "total_items": len(payer_types)}
-    except aiomysqlError as e:
-        logger.error(f"Database error when fetching payer types: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="failed to retrieve payer types from database",
-        )
-    except Exception as e:
-        logger.error(f"unexpected error: {e}")
+        logger.error(f"Unexpected error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="unexpected error",
@@ -120,10 +111,11 @@ async def get_order(
 ):
     try:
         async with connection.cursor() as cursor:
-            query = """SELECT bv.status AS billing_visit_status, p.patient_name, p.patient_id AS patient_id, o.*, i.concept_name, i.category
+            query = """SELECT bv.status AS billing_visit_status, p.patient_name, 
+                    p.patient_uuid, o.*, i.id AS item_id, i.item_name, i.category
                     FROM hayokbps.orders o
-                    JOIN hayokbps.items i ON o.concept_id = i.concept_id
-                    LEFT JOIN hayokbps.billing_patients p on p.patient_id = o.patient_id
+                    JOIN hayokbps.items i ON o.concept_uuid = i.concept_uuid
+                    LEFT JOIN hayokbps.billing_patients p on p.patient_uuid = o.patient_uuid
                     LEFT JOIN hayokbps.billing_visits bv on bv.id = o.billing_visit_id
                     WHERE billing_visit_id = %s
                     """
@@ -141,7 +133,7 @@ async def get_order(
             for row in fetched_order:
                 order[billing_visit_id] = {
                     "id": billing_visit_id,
-                    "patient_id": row["patient_id"],
+                    "patient_uuid": row["patient_uuid"],
                     "status": row["billing_visit_status"],
                     "patient_name": row["patient_name"],
                     "items": [],
@@ -150,12 +142,18 @@ async def get_order(
                 # if row.get("order_id"):
                 order[billing_visit_id]["items"].append(
                     {
-                        "order_id": row["order_id"],
-                        "concept_name": row["concept_name"],
-                        "concept_id": row["concept_id"],
+                        "order_id": row["order_uuid"],
+                        "item_name": row["item_name"],
+                        "concept_uuid": row["concept_uuid"],
                         "category": row["category"],
                         "quantity": row["quantity"],
                         "status": row["status"],
+                        "drug_uuid": row["drug_uuid"],
+                        "item_id": row["item_id"],
+                        "frequency": row["frequency"],
+                        "route": row["route"],
+                        "duration": row["duration"],
+                        "dose": row["dose"],
                     }
                 )
             order = list(order.values())[0]
@@ -234,12 +232,26 @@ async def update_order(
                     detail="Payer type is required",
                 )
 
+            # select patient_id first
+            await cursor.execute(
+                "SELECT * FROM hayokbps.billing_patients WHERE patient_uuid = %s",
+                (bill_payload.get("patient_uuid"),),
+            )
+
+            patient = await cursor.fetchone()
+
+            if patient is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="patient not found!"
+                )
+
+            patient_id = patient["id"]
             generate_bill_query = """INSERT INTO hayokbps.bill (payer_id, patient_id, billing_visit_id)
                     VALUES (%s, %s, %s)"""
 
             await cursor.execute(
                 generate_bill_query,
-                (payer_id, bill_payload.get("patient_id"), billing_visit_id),
+                (payer_id, patient_id, billing_visit_id),
             )
 
             bill_id = cursor.lastrowid
@@ -251,39 +263,36 @@ async def update_order(
                 )
 
             get_payer_price_query = """
-                SELECT
-                    p.item_id,
-                    items.concept_name,
-                    p.payer_id,
-                    p.price
-                FROM hayokbps.payer_type pt
-                JOIN hayokbps.item_prices p ON p.payer_id = pt.id
-                LEFT JOIN hayokbps.items items ON items.id = p.item_id
-                WHERE pt.id = %s AND p.item_id = %s
-            """
+                SELECT COALESCE(ip.price, i.base_price) as price
+                FROM hayokbps.items i
+                LEFT JOIN hayokbps.item_prices ip
+                    ON ip.item_id = i.id
+                    AND ip.payer_id = %s
+                WHERE i.id = %s"""
 
             for item in bill_items:
-                concept_id = item.get("concept_id")
-                concept_name = item.get("concept_name")
+                item_name = item.get("item_name")
                 category = item.get("category")
-                order_id = item.get("order_id")
+                order_uuid = item.get("order_id")
+                item_uuid = item.get("drug_uuid") or item.get("concept_uuid")
+                item_id = item.get("item_id")
                 quantity = item.get("quantity", 1)
 
                 await cursor.execute(
                     get_payer_price_query,
-                    (payer_id, concept_id),
+                    (payer_id, item_id),
                 )
                 price_info = await cursor.fetchone()
 
                 if not price_info:
                     missing_prices.append(
-                        item.get("concept_name", f"Concept ID: {concept_id}")
+                        item.get("item_name", f"Concept ID: {item_uuid}")
                     )
                     continue
 
                 price = price_info.get("price")
                 if price is None or price <= 0:
-                    missing_prices.append(f"{concept_name} (price is {price})")
+                    missing_prices.append(f"{item_name} (price is {price})")
                     continue
 
                 price = decimal.Decimal(str(price_info["price"]))
@@ -292,8 +301,8 @@ async def update_order(
                 bill_items_batch.append(
                     (
                         bill_id,
-                        order_id,
-                        concept_name,
+                        order_uuid,
+                        item_name,
                         category,
                         quantity,
                         price,
@@ -319,11 +328,9 @@ async def update_order(
 
             bill_items_query = """
                 INSERT INTO hayokbps.bill_items
-                (bill_id, order_id, description, item_type, quantity, unit_price, total_price)
+                (bill_id, order_uuid, description, item_type, quantity, unit_price, total_price)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-
-            print(f"bill_id : {bill_id}")
 
             await cursor.executemany(bill_items_query, bill_items_batch)
 
@@ -349,30 +356,30 @@ async def update_order(
             if parsed_order_ids:
                 placeholders = ", ".join(["%s"] * len(parsed_order_ids))
 
-            print(parsed_order_ids)
-            update_order_status_query = f"""
-                UPDATE hayokbps.orders
-                SET status = %s,
-                    updated_at = NOW()
-                WHERE order_id IN ({placeholders})"""
+                # print(parsed_order_ids)
+                update_order_status_query = f"""
+                    UPDATE hayokbps.orders
+                    SET status = %s,
+                        updated_at = NOW()
+                    WHERE order_uuid IN ({placeholders})"""
 
-            await cursor.execute(
-                update_order_status_query, tuple([order_status] + parsed_order_ids)
+                await cursor.execute(
+                    update_order_status_query, tuple([order_status] + parsed_order_ids)
+                )
+                # Step 10: Commit transaction
+                await connection.commit()
+
+                return {
+                    "message": "Bill generated successfully",
+                    "bill_id": bill_id,
+                    "total_amount": float(total_amount),
+                    "items_count": len(bill_items_batch),
+                }
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No order ids were parsed/selected",
             )
-            # Step 10: Commit transaction
-            await connection.commit()
 
-            logger.info(
-                f"Bill {bill_id} generated successfully for order {billing_visit_id} "
-                f"with {len(bill_items_batch)} items, total: {total_amount}"
-            )
-
-        return {
-            "message": "Bill generated successfully",
-            "bill_id": bill_id,
-            "total_amount": float(total_amount),
-            "items_count": len(bill_items_batch),
-        }
     except aiomysqlError as e:
         logger.error(
             f"Database error when generating bill for order {billing_visit_id}: {e}"

@@ -2,8 +2,8 @@ import os
 import time
 
 import mysql.connector
-from dotenv import load_dotenv
 from mysql.connector import Error
+from dotenv import load_dotenv
 
 load_dotenv()
 

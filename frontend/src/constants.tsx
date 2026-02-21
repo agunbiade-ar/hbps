@@ -39,12 +39,16 @@ export const navItems = [
         name: 'Price Management',
         link: '/price-management',
       },
+      {
+        name: 'Payer Types',
+        link: '/payer-types',
+      },
     ],
   },
   {
-    "label": "Orders",
-    "link": "/orders",
-    "icon": <IbmWatsonOrders />
+    label: 'Orders',
+    link: '/orders',
+    icon: <IbmWatsonOrders />,
   },
   // {
   //     "label": "Pharmacy",

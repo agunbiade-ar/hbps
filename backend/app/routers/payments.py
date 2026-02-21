@@ -28,11 +28,11 @@ async def get_all_payments(
                     p.id, p.bill_id, p.amount, 
                     p.receipt_number, p.created_at, bi.item_type,
                     bi.payment_id AS bill_item_payment_id, bi.description, bi.unit_price, bi.quantity, bi.total_price, 
-                    bp.patient_name, bp.patient_id,
+                    bp.patient_name, bp.id,
                     CONCAT_WS(' ', u.first_name, u.last_name) AS cashier_name 
                 FROM hayokbps.payments p 
                 LEFT JOIN hayokbps.bill b ON b.id = p.bill_id
-                LEFT JOIN hayokbps.billing_patients bp ON bp.patient_id = p.patient_id
+                LEFT JOIN hayokbps.billing_patients bp ON bp.id = p.patient_id
                 JOIN hayokbps.users u ON u.id = p.cashier_id
                 JOIN hayokbps.bill_items bi ON bi.payment_id = p.id
                 WHERE 1 = 1 """

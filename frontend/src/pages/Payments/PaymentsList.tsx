@@ -57,7 +57,7 @@ const PaymentsList = () => {
   const [pageSize, setPageSize] = useState(100);
 
   const facilityQuery = useGetFacilityQuery({});
-  console.log(facilityQuery);
+  // console.log(facilityQuery.data);
   const paymentsQuery = useGetAllPaymentsQuery(
     {
       offset: pageSize * (currentPage - 1),
@@ -323,6 +323,7 @@ const PaymentsList = () => {
         <div class="receipt">
           <div class="receipt-header">
             <h1>${facilityQuery.data?.facility_name}</h1>
+            <p>${facilityQuery.data?.street ?? ''}</p>
             <p>${facilityQuery.data?.state}</p>
             <p>${facilityQuery.data?.phone_no}</p>
           </div>
