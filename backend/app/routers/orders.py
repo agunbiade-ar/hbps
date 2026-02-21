@@ -157,6 +157,7 @@ async def get_order(
                     }
                 )
             order = list(order.values())[0]
+            print(order)
             return order
 
     except aiomysqlError as e:

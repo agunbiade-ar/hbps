@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS hayokbps.items (
     base_price DECIMAL(10,2) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_drug (drug_uuid)
+    UNIQUE KEY unique_concept_no_drug (concept_uuid, drug_uuid)
 );
 
 CREATE TABLE IF NOT EXISTS hayokbps.item_prices (
