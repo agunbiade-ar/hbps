@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo } from "react";
 import {
   Button,
   Loading,
@@ -16,15 +16,15 @@ import {
   Modal,
   RadioButtonGroup,
   RadioButton,
-} from '@carbon/react';
-import { ArrowLeft, CheckmarkFilled, Delivery } from '@carbon/icons-react';
-import { useNavigate, useParams } from 'react-router-dom';
-import './order-items-management.scss';
+} from "@carbon/react";
+import { ArrowLeft, CheckmarkFilled, Delivery } from "@carbon/icons-react";
+import { useNavigate, useParams } from "react-router-dom";
+import "./order-items-management.scss";
 import {
   useUpdateOrderMutation,
   useGetBillingVisitQuery,
-} from '../../api/Orders';
-import { useGetPayerTypesQuery } from '../../api/Payers';
+} from "../../api/Orders";
+import { useGetPayerTypesQuery } from "../../api/Payers";
 
 interface OrderItem {
   id: number;
@@ -38,7 +38,7 @@ interface OrderItem {
   route: string;
 
   quantity: number;
-  status: 'open' | 'billed' | 'paid' | 'dispensed';
+  status: "open" | "billed" | "paid" | "dispensed";
   order_id: number;
 }
 
@@ -54,11 +54,11 @@ export const OrderItemsManagement = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [updateOrders] = useUpdateOrderMutation();
 
-  const [selectedPayerType, setSelectedPayerType] = useState('');
+  const [selectedPayerType, setSelectedPayerType] = useState("");
 
   // Fetch payer types
   const payerQuery = useGetPayerTypesQuery({});
@@ -95,17 +95,18 @@ export const OrderItemsManagement = () => {
   );
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [actionType, setActionType] = useState<'bill' | 'dispense' | null>(
+  const [actionType, setActionType] = useState<"bill" | "dispense" | null>(
     null,
   );
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [paidExpandedId, setPaidExpandedId] = useState<number | null>(null);
   // Split items into two groups
   const openBilledItems = useMemo(() => {
     return (
       orderDetails?.items.filter(
-        (item) => item.status === 'open' || item.status === 'billed',
+        (item) => item.status === "open" || item.status === "billed",
       ) || []
     );
   }, [orderDetails]);
@@ -113,7 +114,7 @@ export const OrderItemsManagement = () => {
   const paidDispensedItems = useMemo(() => {
     return (
       orderDetails?.items.filter(
-        (item) => item.status === 'paid' || item.status === 'dispensed',
+        (item) => item.status === "paid" || item.status === "dispensed",
       ) || []
     );
   }, [orderDetails]);
@@ -121,8 +122,8 @@ export const OrderItemsManagement = () => {
   // Show loading while redirecting
   if (!orderDetails) {
     return (
-      <div className='order-items-loading'>
-        <Loading description='Loading...' withOverlay={false} />
+      <div className="order-items-loading">
+        <Loading description="Loading..." withOverlay={false} />
       </div>
     );
   }
@@ -130,10 +131,10 @@ export const OrderItemsManagement = () => {
   // Get category label
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
-      lab: 'Laboratory',
-      drug: 'Pharmacy',
-      procedure: 'Procedure',
-      admission: 'Admission',
+      lab: "Laboratory",
+      drug: "Pharmacy",
+      procedure: "Procedure",
+      admission: "Admission",
     };
     return labels[category] || category;
   };
@@ -141,14 +142,14 @@ export const OrderItemsManagement = () => {
   // Get status tag
   const getStatusTag = (status: string) => {
     const statusConfig = {
-      open: { type: 'blue', label: 'Open' },
-      billed: { type: 'purple', label: 'Billed' },
-      paid: { type: 'green', label: 'Paid' },
-      dispensed: { type: 'teal', label: 'Dispensed' },
+      open: { type: "blue", label: "Open" },
+      billed: { type: "purple", label: "Billed" },
+      paid: { type: "green", label: "Paid" },
+      dispensed: { type: "teal", label: "Dispensed" },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || {
-      type: 'gray',
+      type: "gray",
       label: status,
     };
 
@@ -158,7 +159,7 @@ export const OrderItemsManagement = () => {
   // Handle checkbox changes for open/billed table
   const handleOpenItemToggle = (itemOrderId: number, checked: boolean) => {
     const item = openBilledItems.find((i) => i.order_id === itemOrderId);
-    if (!item || item.status === 'billed') return; // Only allow open items to be selected
+    if (!item || item.status === "billed") return; // Only allow open items to be selected
 
     const newSelection = new Set(selectedOpenItems);
     if (checked) {
@@ -172,7 +173,7 @@ export const OrderItemsManagement = () => {
   // Handle checkbox changes for paid/dispensed table
   const handlePaidItemToggle = (itemOrderId: number, checked: boolean) => {
     const item = paidDispensedItems.find((i) => i.order_id === itemOrderId);
-    if (!item || item.status === 'dispensed') return; // Only allow paid items to be selected
+    if (!item || item.status === "dispensed") return; // Only allow paid items to be selected
 
     const newSelection = new Set(selectedPaidItems);
     if (checked) {
@@ -186,20 +187,20 @@ export const OrderItemsManagement = () => {
   // Handle mark as billed
   const handleMarkAsBilled = () => {
     if (selectedOpenItems.size === 0) {
-      setError('Please select at least one item to mark as billed');
+      setError("Please select at least one item to mark as billed");
       return;
     }
-    setActionType('bill');
+    setActionType("bill");
     setIsConfirmModalOpen(true);
   };
 
   // Handle mark as dispensed
   const handleMarkAsDispensed = () => {
     if (selectedPaidItems.size === 0) {
-      setError('Please select at least one item to mark as dispensed');
+      setError("Please select at least one item to mark as dispensed");
       return;
     }
-    setActionType('dispense');
+    setActionType("dispense");
     setIsConfirmModalOpen(true);
   };
 
@@ -207,11 +208,11 @@ export const OrderItemsManagement = () => {
   const handleConfirmAction = async () => {
     try {
       setIsProcessing(true);
-      setError('');
+      setError("");
 
-      if (actionType === 'bill') {
+      if (actionType === "bill") {
         const orderIds = Array.from(selectedOpenItems);
-        console.log('Marking as billed (order_ids):', orderIds);
+        console.log("Marking as billed (order_ids):", orderIds);
         const items = [];
         for (const i of orderDetails.items) {
           if (orderIds.includes(i.order_id)) {
@@ -243,9 +244,9 @@ export const OrderItemsManagement = () => {
           setError(error.data.detail);
         }
         setSelectedOpenItems(new Set());
-      } else if (actionType === 'dispense') {
+      } else if (actionType === "dispense") {
         const orderIds = Array.from(selectedPaidItems);
-        console.log('Marking as dispensed (order_ids):', orderIds);
+        console.log("Marking as dispensed (order_ids):", orderIds);
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
         setSuccess(
@@ -257,7 +258,7 @@ export const OrderItemsManagement = () => {
       setIsConfirmModalOpen(false);
       setActionType(null);
     } catch (err) {
-      const errMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errMessage = err instanceof Error ? err.message : "Unknown error";
       setError(`Failed to update items: ${errMessage}`);
     } finally {
       setIsProcessing(false);
@@ -266,33 +267,33 @@ export const OrderItemsManagement = () => {
 
   // Table headers
   const headers = [
-    { key: 'select', header: 'Select' },
-    { key: 'itemName', header: 'Item Name' },
-    { key: 'category', header: 'Category' },
-    { key: 'quantity', header: 'Quantity' },
-    { key: 'status', header: 'Status' },
+    { key: "select", header: "Select" },
+    { key: "itemName", header: "Item Name" },
+    { key: "category", header: "Category" },
+    { key: "quantity", header: "Quantity" },
+    { key: "status", header: "Status" },
   ];
 
   return (
-    <div className='order-items-container'>
+    <div className="order-items-container">
       {/* Header */}
-      <div className='order-items-header'>
+      <div className="order-items-header">
         <Button
-          kind='ghost'
+          kind="ghost"
           renderIcon={ArrowLeft}
-          onClick={() => navigate('/orders')}
-          className='order-items-header__back'
+          onClick={() => navigate("/orders")}
+          className="order-items-header__back"
         >
           Back to Orders
         </Button>
 
-        <div className='order-items-header__info'>
-          <h1 className='order-items-header__title'>Manage Order Items</h1>
-          <div className='order-items-header__meta'>
-            <span className='order-items-header__patient'>
+        <div className="order-items-header__info">
+          <h1 className="order-items-header__title">Manage Order Items</h1>
+          <div className="order-items-header__meta">
+            <span className="order-items-header__patient">
               Patient: <strong>{orderDetails.patient_name}</strong>
             </span>
-            <span className='order-items-header__order-id'>
+            <span className="order-items-header__order-id">
               Order ID: <strong>#{orderDetails.id}</strong>
             </span>
           </div>
@@ -300,39 +301,39 @@ export const OrderItemsManagement = () => {
       </div>
 
       {error && (
-        <div className='order-items-notification'>
+        <div className="order-items-notification">
           <InlineNotification
-            kind='error'
-            title='Error'
+            kind="error"
+            title="Error"
             subtitle={error}
-            onClose={() => setError('')}
+            onClose={() => setError("")}
           />
         </div>
       )}
 
       {success && (
-        <div className='order-items-notification'>
+        <div className="order-items-notification">
           <InlineNotification
-            kind='success'
-            title='Success'
+            kind="success"
+            title="Success"
             subtitle={success}
-            onClose={() => setSuccess('')}
+            onClose={() => setSuccess("")}
           />
         </div>
       )}
 
       {/* Open/Billed Items Section */}
-      <div className='order-items-section'>
-        <div className='order-items-section__header'>
-          <div className='order-items-section__title-group'>
-            <h2 className='order-items-section__title'>Open & Billed Items</h2>
-            <p className='order-items-section__subtitle'>
+      <div className="order-items-section">
+        <div className="order-items-section__header">
+          <div className="order-items-section__title-group">
+            <h2 className="order-items-section__title">Open & Billed Items</h2>
+            <p className="order-items-section__subtitle">
               Select open items and mark them as billed
             </p>
           </div>
           {selectedOpenItems.size > 0 && (
             <Button
-              kind='primary'
+              kind="primary"
               renderIcon={CheckmarkFilled}
               onClick={handleMarkAsBilled}
             >
@@ -341,7 +342,7 @@ export const OrderItemsManagement = () => {
           )}
         </div>
 
-        <div className='order-items-table-container'>
+        <div className="order-items-table-container">
           <DataTable
             rows={openBilledItems.map((item) => ({
               ...item,
@@ -359,7 +360,7 @@ export const OrderItemsManagement = () => {
             }) => {
               // Calculate select all state
               const selectableItems = openBilledItems.filter(
-                (i) => i.status === 'open',
+                (i) => i.status === "open",
               );
               const allSelected =
                 selectableItems.length > 0 &&
@@ -371,13 +372,13 @@ export const OrderItemsManagement = () => {
               return (
                 <TableContainer
                   {...getTableContainerProps()}
-                  className='order-items-table-wrapper'
+                  className="order-items-table-wrapper"
                 >
-                  <Table {...getTableProps()} className='order-items-table'>
+                  <Table {...getTableProps()} className="order-items-table">
                     <TableHead>
                       <TableRow>
                         {headers.map((header) => {
-                          if (header.key === 'select') {
+                          if (header.key === "select") {
                             return (
                               <TableHeader
                                 {...getHeaderProps({ header })}
@@ -385,8 +386,8 @@ export const OrderItemsManagement = () => {
                               >
                                 {selectableItems.length > 0 && (
                                   <Checkbox
-                                    id='select-all-open'
-                                    labelText='Select all'
+                                    id="select-all-open"
+                                    labelText="Select all"
                                     hideLabel
                                     checked={allSelected}
                                     indeterminate={someSelected && !allSelected}
@@ -429,9 +430,9 @@ export const OrderItemsManagement = () => {
                           );
                           if (!item) return null;
 
-                          const canSelect = item.status === 'open';
+                          const canSelect = item.status === "open";
                           const isExpanded = expandedId === item.order_id;
-                          const isDrug = item.category.toLowerCase() === 'drug';
+                          const isDrug = item.category.toLowerCase() === "drug";
 
                           return (
                             <>
@@ -439,7 +440,7 @@ export const OrderItemsManagement = () => {
                               <TableRow
                                 {...getRowProps({ row })}
                                 key={row.id}
-                                className={`order-items-table__row ${isDrug ? 'order-items-table__row--clickable' : ''}`}
+                                className={`order-items-table__row ${isDrug ? "order-items-table__row--clickable" : ""}`}
                                 onClick={() =>
                                   isDrug &&
                                   setExpandedId(
@@ -451,7 +452,7 @@ export const OrderItemsManagement = () => {
                                   {canSelect ? (
                                     <Checkbox
                                       id={`open-${item.order_id}`}
-                                      labelText=''
+                                      labelText=""
                                       checked={selectedOpenItems.has(
                                         item.order_id,
                                       )}
@@ -463,23 +464,23 @@ export const OrderItemsManagement = () => {
                                       }
                                     />
                                   ) : (
-                                    <span className='order-items-table__disabled-checkbox'>
+                                    <span className="order-items-table__disabled-checkbox">
                                       —
                                     </span>
                                   )}
                                 </TableCell>
                                 <TableCell>
-                                  <div className='order-items-table__item-name'>
+                                  <div className="order-items-table__item-name">
                                     {item.item_name}
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <Tag size='sm'>
+                                  <Tag size="sm">
                                     {getCategoryLabel(item.category)}
                                   </Tag>
                                 </TableCell>
                                 <TableCell>
-                                  <span className='order-items-table__quantity'>
+                                  <span className="order-items-table__quantity">
                                     {item.quantity}
                                   </span>
                                 </TableCell>
@@ -495,10 +496,10 @@ export const OrderItemsManagement = () => {
                                     colSpan={headers.length}
                                     style={{ padding: 0 }}
                                   >
-                                    <div className='drug-inline-detail'>
+                                    <div className="drug-inline-detail">
                                       {item ? (
                                         <>
-                                          <div className='drug-inline-detail__grid'>
+                                          <div className="drug-inline-detail__grid">
                                             {item.dose !== undefined && (
                                               <div>
                                                 <span>Dose</span>
@@ -532,7 +533,7 @@ export const OrderItemsManagement = () => {
                                           </div>
                                         </>
                                       ) : (
-                                        <p className='drug-inline-detail__missing'>
+                                        <p className="drug-inline-detail__missing">
                                           No prescription details available.
                                         </p>
                                       )}
@@ -546,7 +547,7 @@ export const OrderItemsManagement = () => {
                       ) : (
                         <TableRow>
                           <TableCell colSpan={headers.length}>
-                            <div className='order-items-empty'>
+                            <div className="order-items-empty">
                               <p>No open or billed items</p>
                             </div>
                           </TableCell>
@@ -562,19 +563,19 @@ export const OrderItemsManagement = () => {
       </div>
 
       {/* Paid/Dispensed Items Section */}
-      <div className='order-items-section'>
-        <div className='order-items-section__header'>
-          <div className='order-items-section__title-group'>
-            <h2 className='order-items-section__title'>
+      <div className="order-items-section">
+        <div className="order-items-section__header">
+          <div className="order-items-section__title-group">
+            <h2 className="order-items-section__title">
               Paid & Dispensed Items
             </h2>
-            <p className='order-items-section__subtitle'>
+            <p className="order-items-section__subtitle">
               Select paid items and mark them as dispensed
             </p>
           </div>
           {selectedPaidItems.size > 0 && (
             <Button
-              kind='secondary'
+              kind="secondary"
               renderIcon={Delivery}
               onClick={handleMarkAsDispensed}
             >
@@ -583,10 +584,9 @@ export const OrderItemsManagement = () => {
           )}
         </div>
 
-        <div className='order-items-table-container'>
+        <div className="order-items-table-container">
           <DataTable
             rows={paidDispensedItems.map((item) => ({
-              // ✅ FIXED: Using paidDispensedItems instead of openBilledItems
               ...item,
               id: item.order_id.toString(),
             }))}
@@ -602,7 +602,7 @@ export const OrderItemsManagement = () => {
             }) => {
               // Calculate select all state
               const selectableItems = paidDispensedItems.filter(
-                (i) => i.status === 'paid',
+                (i) => i.status === "paid",
               );
               const allSelected =
                 selectableItems.length > 0 &&
@@ -614,13 +614,13 @@ export const OrderItemsManagement = () => {
               return (
                 <TableContainer
                   {...getTableContainerProps()}
-                  className='order-items-table-wrapper'
+                  className="order-items-table-wrapper"
                 >
-                  <Table {...getTableProps()} className='order-items-table'>
+                  <Table {...getTableProps()} className="order-items-table">
                     <TableHead>
                       <TableRow>
                         {headers.map((header) => {
-                          if (header.key === 'select') {
+                          if (header.key === "select") {
                             return (
                               <TableHeader
                                 {...getHeaderProps({ header })}
@@ -628,8 +628,8 @@ export const OrderItemsManagement = () => {
                               >
                                 {selectableItems.length > 0 && (
                                   <Checkbox
-                                    id='select-all-paid'
-                                    labelText='Select all'
+                                    id="select-all-paid"
+                                    labelText="Select all"
                                     hideLabel
                                     checked={allSelected}
                                     indeterminate={someSelected && !allSelected}
@@ -668,63 +668,125 @@ export const OrderItemsManagement = () => {
                       {rows.length > 0 ? (
                         rows.map((row) => {
                           const item = paidDispensedItems.find(
-                            // ✅ FIXED: Looking in paidDispensedItems
                             (i) => i.order_id.toString() === row.id,
                           );
                           if (!item) return null;
+                          const isExpanded = paidExpandedId === item.order_id;
+                          const isDrug = item.category.toLowerCase() === "drug";
 
-                          const canSelect = item.status === 'paid';
+                          const canSelect = item.status === "paid";
 
                           return (
-                            <TableRow
-                              {...getRowProps({ row })}
-                              key={row.id}
-                              className='order-items-table__row'
-                            >
-                              <TableCell>
-                                {canSelect ? (
-                                  <Checkbox
-                                    id={`paid-${item.order_id}`}
-                                    labelText=''
-                                    checked={selectedPaidItems.has(
-                                      item.order_id,
-                                    )}
-                                    onChange={(e) =>
-                                      handlePaidItemToggle(
+                            <>
+                              <TableRow
+                                {...getRowProps({ row })}
+                                key={row.id}
+                                className="order-items-table__row"
+                                onClick={() =>
+                                  isDrug &&
+                                  setPaidExpandedId(
+                                    isExpanded ? null : item.order_id,
+                                  )
+                                }
+                              >
+                                <TableCell>
+                                  {canSelect ? (
+                                    <Checkbox
+                                      id={`paid-${item.order_id}`}
+                                      labelText=""
+                                      checked={selectedPaidItems.has(
                                         item.order_id,
-                                        e.target.checked,
-                                      )
-                                    }
-                                  />
-                                ) : (
-                                  <span className='order-items-table__disabled-checkbox'>
-                                    —
+                                      )}
+                                      onChange={(e) =>
+                                        handlePaidItemToggle(
+                                          item.order_id,
+                                          e.target.checked,
+                                        )
+                                      }
+                                    />
+                                  ) : (
+                                    <span className="order-items-table__disabled-checkbox">
+                                      —
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="order-items-table__item-name">
+                                    {item.item_name}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Tag size="sm">
+                                    {getCategoryLabel(item.category)}
+                                  </Tag>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="order-items-table__quantity">
+                                    {item.quantity}
                                   </span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <div className='order-items-table__item-name'>
-                                  {item.item_name}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Tag size='sm'>
-                                  {getCategoryLabel(item.category)}
-                                </Tag>
-                              </TableCell>
-                              <TableCell>
-                                <span className='order-items-table__quantity'>
-                                  {item.quantity}
-                                </span>
-                              </TableCell>
-                              <TableCell>{getStatusTag(item.status)}</TableCell>
-                            </TableRow>
+                                </TableCell>
+                                <TableCell>
+                                  {getStatusTag(item.status)}
+                                </TableCell>
+                              </TableRow>
+                              {isExpanded && isDrug && (
+                                <TableRow key={`${row.id}-detail`}>
+                                  <TableCell
+                                    colSpan={headers.length}
+                                    style={{ padding: 0 }}
+                                  >
+                                    <div className="drug-inline-detail">
+                                      {item ? (
+                                        <>
+                                          <div className="drug-inline-detail__grid">
+                                            {item.dose !== undefined && (
+                                              <div>
+                                                <span>Dose</span>
+                                                <strong>{item.dose}</strong>
+                                              </div>
+                                            )}
+                                            {item.frequency && (
+                                              <div>
+                                                <span>Frequency</span>
+                                                <strong>
+                                                  {item.frequency}
+                                                </strong>
+                                              </div>
+                                            )}
+                                            {item.route && (
+                                              <div>
+                                                <span>Route</span>
+                                                <strong>{item.route}</strong>
+                                              </div>
+                                            )}
+                                            {item.duration !== undefined && (
+                                              <div>
+                                                <span>Duration</span>
+                                                <strong>{item.duration}</strong>
+                                              </div>
+                                            )}
+                                            <div>
+                                              <span>Qty</span>
+                                              <strong>{item.quantity}</strong>
+                                            </div>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <p className="drug-inline-detail__missing">
+                                          No prescription details available.
+                                        </p>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </>
                           );
                         })
                       ) : (
                         <TableRow>
                           <TableCell colSpan={headers.length}>
-                            <div className='order-items-empty'>
+                            <div className="order-items-empty">
                               <p>No paid or dispensed items</p>
                             </div>
                           </TableCell>
@@ -745,33 +807,33 @@ export const OrderItemsManagement = () => {
         onRequestClose={() => {
           setIsConfirmModalOpen(false);
           setActionType(null);
-          setSelectedPayerType(''); // Reset on close
+          setSelectedPayerType(""); // Reset on close
         }}
         modalHeading={
-          actionType === 'bill'
-            ? 'Confirm Mark as Billed'
-            : 'Confirm Mark as Dispensed'
+          actionType === "bill"
+            ? "Confirm Mark as Billed"
+            : "Confirm Mark as Dispensed"
         }
-        primaryButtonText={isProcessing ? 'Processing...' : 'Confirm'}
-        secondaryButtonText='Cancel'
+        primaryButtonText={isProcessing ? "Processing..." : "Confirm"}
+        secondaryButtonText="Cancel"
         onRequestSubmit={handleConfirmAction}
         primaryButtonDisabled={
-          isProcessing || (actionType === 'bill' && !selectedPayerType)
+          isProcessing || (actionType === "bill" && !selectedPayerType)
         }
         danger={false}
-        size='md'
+        size="md"
       >
-        <div className='order-items-modal'>
-          <p className='order-items-modal__text'>
-            {actionType === 'bill' ? (
+        <div className="order-items-modal">
+          <p className="order-items-modal__text">
+            {actionType === "bill" ? (
               <>
-                You are about to mark <strong>{selectedOpenItems.size}</strong>{' '}
+                You are about to mark <strong>{selectedOpenItems.size}</strong>{" "}
                 item(s) as <strong>billed</strong>. This will update their
                 status from open to billed.
               </>
             ) : (
               <>
-                You are about to mark <strong>{selectedPaidItems.size}</strong>{' '}
+                You are about to mark <strong>{selectedPaidItems.size}</strong>{" "}
                 item(s) as <strong>dispensed</strong>. This will indicate that
                 these items have been given to the patient.
               </>
@@ -779,30 +841,30 @@ export const OrderItemsManagement = () => {
           </p>
 
           {/* Payer Type Selection - Only show for billing */}
-          {actionType === 'bill' && (
-            <div className='order-items-modal__payer-section'>
-              <h3 className='order-items-modal__payer-title'>
-                Select Payer Type{' '}
-                <span className='order-items-modal__required'>*</span>
+          {actionType === "bill" && (
+            <div className="order-items-modal__payer-section">
+              <h3 className="order-items-modal__payer-title">
+                Select Payer Type{" "}
+                <span className="order-items-modal__required">*</span>
               </h3>
-              <p className='order-items-modal__payer-subtitle'>
+              <p className="order-items-modal__payer-subtitle">
                 Choose who will be responsible for payment
               </p>
 
               {payerQuery.isLoading ? (
-                <div className='order-items-modal__payer-loading'>
+                <div className="order-items-modal__payer-loading">
                   <Loading
-                    description='Loading payer types...'
+                    description="Loading payer types..."
                     withOverlay={false}
                     small
                   />
                 </div>
               ) : payerTypes.length > 0 ? (
                 <RadioButtonGroup
-                  name='payer-type-group'
+                  name="payer-type-group"
                   valueSelected={selectedPayerType}
                   onChange={(value) => setSelectedPayerType(value as string)}
-                  className='order-items-modal__payer-options'
+                  className="order-items-modal__payer-options"
                 >
                   {payerTypes.map((payer) => (
                     <RadioButton
@@ -814,7 +876,7 @@ export const OrderItemsManagement = () => {
                   ))}
                 </RadioButtonGroup>
               ) : (
-                <div className='order-items-modal__payer-error'>
+                <div className="order-items-modal__payer-error">
                   <p>
                     No payer types available. Please contact your administrator.
                   </p>
@@ -823,7 +885,7 @@ export const OrderItemsManagement = () => {
             </div>
           )}
 
-          <p className='order-items-modal__warning'>
+          <p className="order-items-modal__warning">
             This action cannot be undone. Continue?
           </p>
         </div>

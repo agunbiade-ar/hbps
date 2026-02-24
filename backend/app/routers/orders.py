@@ -157,9 +157,10 @@ async def get_order(
                     }
                 )
             order = list(order.values())[0]
-            print(order)
+            # print(order)
             return order
-
+    except HTTPException:
+        raise
     except aiomysqlError as e:
         logger.error(f"Database error when fetching orders: {e}")
         raise HTTPException(
@@ -381,6 +382,9 @@ async def update_order(
                 detail="No order ids were parsed/selected",
             )
 
+    except HTTPException:
+        await connection.rollback()
+        raise
     except aiomysqlError as e:
         logger.error(
             f"Database error when generating bill for order {billing_visit_id}: {e}"

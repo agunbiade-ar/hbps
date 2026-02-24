@@ -3,7 +3,7 @@ services:
     build: ./backend
     container_name: hayokbps_backend
     ports:
-      - '8000:8000'
+      - "8000:8000"
     env_file:
       - ./backend/.env
     depends_on:
@@ -11,41 +11,41 @@ services:
         condition: service_healthy
     restart: always
     networks:
-      - openmrs-distro-referenceapplication-main_default
+      - openmrs-distro-referenceapplication_default
 
   frontend:
     build: ./frontend
     container_name: hayokbps_frontend
     ports:
-      - '3000:3000'
+      - "3000:3000"
     restart: always
     networks:
-      - openmrs-distro-referenceapplication-main_default
+      - openmrs-distro-referenceapplication_default
 
   hayokbps_sql:
     image: mysql:8
     container_name: hayokbps_sql
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_HOST: "%"
       MYSQL_DATABASE: hayokbps
     ports:
-      - '9000:3306'
+      - "9000:3306"
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       retries: 10
       timeout: 5s
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./backend/sql/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
+      # - ./backend/sql/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
     restart: always
     networks:
-      - openmrs-distro-referenceapplication-main_default
+      - openmrs-distro-referenceapplication_default
 
 volumes:
   mysql_data:
 
 networks:
-  openmrs-distro-referenceapplication-main_default:
+  openmrs-distro-referenceapplication_default:
     external: true

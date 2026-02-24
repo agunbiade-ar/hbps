@@ -6,9 +6,9 @@ import {
   IbmWatsonOrders,
   UserFollow,
   // Logout,
-} from '@carbon/icons-react';
+} from "@carbon/icons-react";
 
-export const BACKEND_BASE_URL = 'http://192.168.88.251:8000';
+export const BACKEND_BASE_URL = "http://10.61.190.91:8000";
 
 export type User = {
   id: number;
@@ -23,31 +23,31 @@ export const navItems = [
   //   icon: <Home />,
   // },
   {
-    label: 'Finance',
-    link: '/finance',
+    label: "Finance",
+    link: "/finance",
     icon: <Receipt />,
     sub_routes: [
       {
-        link: '/bills',
-        name: 'Bills',
+        link: "/bills",
+        name: "Bills",
       },
       {
-        name: 'Payments',
-        link: '/payments',
+        name: "Payments",
+        link: "/payments",
       },
       {
-        name: 'Price Management',
-        link: '/price-management',
+        name: "Price Management",
+        link: "/price-management",
       },
       {
-        name: 'Payer Types',
-        link: '/payer-types',
+        name: "Payer Types",
+        link: "/payer-types",
       },
     ],
   },
   {
-    label: 'Orders',
-    link: '/orders',
+    label: "Orders",
+    link: "/orders",
     icon: <IbmWatsonOrders />,
   },
   // {
@@ -56,8 +56,8 @@ export const navItems = [
   //     "icon": <Medication />
   // },
   {
-    label: 'Register User',
-    link: '/register-user',
+    label: "Register User",
+    link: "/register-user",
     icon: <UserFollow />,
   },
   // {

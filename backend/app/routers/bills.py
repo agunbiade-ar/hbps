@@ -27,6 +27,8 @@ async def get_all_bills(
             await cursor.execute(query, (limit, offset))
             bills = await cursor.fetchall()
         return bills
+    except HTTPException:
+        raise
     except aiomysqlError as e:
         logger.error(f"Database error when fetching bills: {e}")
         raise HTTPException(
@@ -82,6 +84,8 @@ async def get_bill(
                 }
                 bill_data["bill_items"].append(item)
         return bill_data
+    except HTTPException:
+        raise
     except aiomysqlError as e:
         logger.error(f"Database error when fetching bill with id of {bill_id}: {e}")
         raise HTTPException(

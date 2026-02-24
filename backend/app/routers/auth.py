@@ -180,7 +180,7 @@ async def register(
         await connection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error",
+            detail="Database error",
         )
 
     except httpx.TimeoutException:
@@ -200,7 +200,7 @@ async def register(
         logger.error(f"unexpected error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"unexpected error",
+            detail="unexpected error",
         )
 
 
@@ -381,15 +381,16 @@ async def get_users(
 ):
     try:
         async with connection.cursor() as cursor:
-            query = """SELECT openmrs_uuid, first_name, last_name, middle_name FROM hayokbps.users"""
-
-            await cursor.execute(query)
+            # select everyone in the hayokbps user table
+            await cursor.execute("SELECT * FROM hayokbps.users")
+            # fetch everyone into a list
             hayokbps_users = await cursor.fetchall()
 
+            # this will almost or will never run, as it always returns a list
             if hayokbps_users is None:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"an error occurred while fetching users from localdb",
+                    detail="an error occurred while fetching users from localdb",
                 )
 
             # default it fetches the first page
@@ -399,7 +400,7 @@ async def get_users(
             if len(openmrs_users) == 0 or openmrs_users is None:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"no users in the openmrs db",
+                    detail="no users in the openmrs db",
                 )
 
             local_uuids = {u["openmrs_uuid"] for u in hayokbps_users}
@@ -414,12 +415,11 @@ async def get_users(
         logger.error(f"Database error when fetching users {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error when fetching users",
+            detail="Database error when fetching users",
         )
     except Exception as e:
         logger.error(f"Unexpected error while fetching users: {e}")
-        await connection.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected while fetching users",
+            detail="unexpected error while fetching users",
         )
